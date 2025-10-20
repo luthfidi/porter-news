@@ -1,38 +1,34 @@
-import { getDefaultConfig } from "@rainbow-me/rainbowkit";
-import { defineChain } from "viem";
+import { http, createConfig, createStorage, cookieStorage } from 'wagmi'
+import { baseSepolia } from 'wagmi/chains'
+import { coinbaseWallet, walletConnect, injected } from 'wagmi/connectors'
 
-// Custom Base Sepolia chain
-const customBaseSepolia = defineChain({
-  id: 84532,
-  name: "Base Sepolia",
-  nativeCurrency: {
-    decimals: 18,
-    name: "Ether",
-    symbol: "ETH",
-  },
-  rpcUrls: {
-    default: {
-      http: ["https://sepolia.base.org"],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: "BaseScan",
-      url: "https://sepolia.basescan.org",
-    },
-  },
-  contracts: {
-    multicall3: {
-      address: "0xca11bde05977b3631167028862be2a173976ca11",
-      blockCreated: 1059647,
-    },
-  },
-  testnet: true,
-});
+// Only create connectors on client-side
+function getConnectors() {
+  if (typeof window === 'undefined') {
+    return []
+  }
 
-export const config = getDefaultConfig({
-  appName: "Forter - Forecast Porter",
-  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_ID || "YOUR_PROJECT_ID",
-  chains: [customBaseSepolia],
+  return [
+    injected(),
+    coinbaseWallet({
+      appName: 'Porter News',
+      preference: 'smartWalletOnly',
+    }),
+    walletConnect({
+      projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_ID || 'YOUR_PROJECT_ID',
+    }),
+  ]
+}
+
+export const config = createConfig({
+  chains: [baseSepolia],
+  connectors: getConnectors(),
+  // Use cookie storage for SSR compatibility
+  storage: createStorage({
+    storage: typeof window !== 'undefined' ? window.localStorage : cookieStorage,
+  }),
   ssr: true,
-});
+  transports: {
+    [baseSepolia.id]: http(),
+  },
+})
