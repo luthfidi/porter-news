@@ -80,7 +80,7 @@ contract DeployScript is Script {
         console.log("NEXT_PUBLIC_TOKEN_ADDRESS=%s", address(token));
         console.log("NEXT_PUBLIC_REPUTATION_NFT_ADDRESS=%s", address(reputationNFT));
         console.log("NEXT_PUBLIC_GOVERNANCE_ADDRESS=%s", address(governance));
-        console.log("NEXT_PUBLIC_FORTER_ADDRESS=%s", address(forter));
+        console.log("NEXT_PUBLIC_PORTER_ADDRESS=%s", address(forter));
         console.log("NEXT_PUBLIC_STAKINGPOOL_ADDRESS=%s", address(forter.stakingPool()));
         console.log("\n=========================================\n");
     }

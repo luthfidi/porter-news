@@ -130,7 +130,7 @@ export default function NewsPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <Image src="/forter.webp" alt="FORTER" width={40} height={40} className="w-10 h-10 rounded-lg" />
+              <Image src="/forter.webp" alt="PORTER" width={40} height={40} className="w-10 h-10 rounded-lg" />
               <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                 News Explorer
               </h1>

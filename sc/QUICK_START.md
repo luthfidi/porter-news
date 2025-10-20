@@ -273,7 +273,7 @@ forge script script/Deploy.s.sol:DeployScript \
 ```bash
 # Transfer ReputationNFT ownership
 cast send $REPUTATION_NFT_ADDRESS \
-  "transferOwnership(address)" $FORTER_ADDRESS \
+  "transferOwnership(address)" $PORTER_ADDRESS \
   --private-key $PRIVATE_KEY \
   --rpc-url $BASE_SEPOLIA_RPC_URL
 

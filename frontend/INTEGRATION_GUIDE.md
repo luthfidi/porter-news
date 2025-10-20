@@ -1,8 +1,8 @@
-# 🔗 FORTER - SMART CONTRACT INTEGRATION GUIDE
+# 🔗 PORTER - SMART CONTRACT INTEGRATION GUIDE
 
 **For Smart Contract Developers**
 
-This guide shows you exactly where and how to integrate your Solidity contracts with the FORTER frontend.
+This guide shows you exactly where and how to integrate your Solidity contracts with the PORTER frontend.
 
 ---
 

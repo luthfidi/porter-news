@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Forter - Forecast Porter",
+    title: "Porter - Forecast Porter",
     description:
       "Stake on credibility, not luck. Build on-chain reputation through verifiable analysis and earn from accurate insights.",
     icons: {

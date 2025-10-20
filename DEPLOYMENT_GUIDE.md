@@ -1,4 +1,4 @@
-# 🚀 Forter News - Deployment Guide
+# 🚀 Porter News - Deployment Guide
 
 Complete guide for deploying smart contracts and updating frontend configuration.
 
@@ -71,7 +71,7 @@ StakingPool deployed at: 0x...
 NEXT_PUBLIC_TOKEN_ADDRESS=0x...
 NEXT_PUBLIC_REPUTATION_NFT_ADDRESS=0x...
 NEXT_PUBLIC_GOVERNANCE_ADDRESS=0x...
-NEXT_PUBLIC_FORTER_ADDRESS=0x...
+NEXT_PUBLIC_PORTER_ADDRESS=0x...
 NEXT_PUBLIC_STAKINGPOOL_ADDRESS=0x...
 ```
 
@@ -132,7 +132,7 @@ NEXT_PUBLIC_USE_CONTRACTS=true
 NEXT_PUBLIC_TOKEN_ADDRESS=0xYOUR_TOKEN_ADDRESS
 NEXT_PUBLIC_REPUTATION_NFT_ADDRESS=0xYOUR_REPUTATION_ADDRESS
 NEXT_PUBLIC_GOVERNANCE_ADDRESS=0xYOUR_GOVERNANCE_ADDRESS
-NEXT_PUBLIC_FORTER_ADDRESS=0xYOUR_FORTER_ADDRESS
+NEXT_PUBLIC_PORTER_ADDRESS=0xYOUR_PORTER_ADDRESS
 NEXT_PUBLIC_STAKINGPOOL_ADDRESS=0xYOUR_STAKINGPOOL_ADDRESS
 ```
 
@@ -143,7 +143,7 @@ If you have a `frontend/src/config/contracts.ts` file, update it with the new ad
 ```typescript
 export const contracts = {
   forter: {
-    address: '0xYOUR_FORTER_ADDRESS' as Address,
+    address: '0xYOUR_PORTER_ADDRESS' as Address,
     abi: ForterABI,
   },
   stakingPool: {
