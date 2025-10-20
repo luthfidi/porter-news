@@ -1,6 +1,29 @@
 import { http, createConfig, createStorage, cookieStorage } from 'wagmi'
-import { baseSepolia } from 'wagmi/chains'
+import { defineChain } from 'viem'
 import { coinbaseWallet, walletConnect, injected } from 'wagmi/connectors'
+
+// Define Monad Devnet chain
+const monad = defineChain({
+  id: 41455,
+  name: 'Monad Devnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'MON',
+    symbol: 'MON'
+  },
+  rpcUrls: {
+    default: {
+      http: [process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://rpc.monad.xyz']
+    }
+  },
+  blockExplorers: {
+    default: {
+      name: 'Monad Explorer',
+      url: 'https://testnet.monadexplorer.com'
+    }
+  },
+  testnet: true,
+})
 
 // Only create connectors on client-side
 function getConnectors() {
@@ -21,7 +44,7 @@ function getConnectors() {
 }
 
 export const config = createConfig({
-  chains: [baseSepolia],
+  chains: [monad],
   connectors: getConnectors(),
   // Use cookie storage for SSR compatibility
   storage: createStorage({
@@ -29,6 +52,6 @@ export const config = createConfig({
   }),
   ssr: true,
   transports: {
-    [baseSepolia.id]: http(),
+    [monad.id]: http(),
   },
 })

@@ -57,8 +57,8 @@ export const config: IntegrationConfig = {
   PLATFORM_FEE_PERCENT: 2, // 2% platform fee
   
   // Network configuration
-  CHAIN_ID: 84532, // Base Sepolia
-  BLOCK_EXPLORER: 'https://sepolia.basescan.org',
+  CHAIN_ID: 41455, // Monad Devnet
+  BLOCK_EXPLORER: 'https://testnet.monadexplorer.com',
   
   // Contract interaction settings
   DEFAULT_GAS_LIMIT: BigInt(500000),
