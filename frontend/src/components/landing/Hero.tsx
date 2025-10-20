@@ -22,7 +22,7 @@ export default function Hero() {
         </h1>
 
         <p className="text-pretty mt-6 md:mt-8 text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-          Forter is the{" "}
+          Porter is the{" "}
           <span className="font-semibold text-foreground">
             Information Finance Protocol
           </span>
