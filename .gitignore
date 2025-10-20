@@ -1,0 +1,19 @@
+.vscode
+.DS_Store
+.env
+
+# Compiler files
+cache/
+out/
+
+# Ignores development broadcast logs
+sc/!/broadcast
+sc/broadcast/*/31337/
+sc/broadcast/**/dry-run/
+
+# Docs
+sc/docs/
+
+# Dotenv file
+sc/.env
+.claude
