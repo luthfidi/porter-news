@@ -3,6 +3,7 @@
 ## 📌 TLDR - Copy Paste Commands
 
 ### First Time Setup
+
 ```bash
 cd sc
 
@@ -15,6 +16,7 @@ nano .env  # Fill in your PRIVATE_KEY and BASESCAN_API_KEY
 ```
 
 ### Fix Current ABI Issue ⚡
+
 ```bash
 # Your ABIs are malformed (table format instead of JSON)
 # Run this to fix:
@@ -24,6 +26,7 @@ nano .env  # Fill in your PRIVATE_KEY and BASESCAN_API_KEY
 ```
 
 ### Development Workflow
+
 ```bash
 # 1. Build & Test
 forge build
@@ -38,6 +41,7 @@ npm run dev
 ```
 
 ### After Deployment
+
 ```bash
 # Update frontend with new addresses AND ABIs
 ./scripts/update-frontend.sh sepolia
@@ -47,6 +51,7 @@ npm run dev
 ```
 
 ### Interactive Menu
+
 ```bash
 # Run interactive menu for all commands
 ./scripts/menu.sh
@@ -59,11 +64,13 @@ npm run dev
 ### ❌ What Went Wrong
 
 You used:
+
 ```bash
 forge inspect Forter abi > ../frontend/src/abis/Forter.json
 ```
 
 This outputs **ASCII table format** (for humans to read):
+
 ```
 ╭─────────────╮
 | Type   ...  |
@@ -74,11 +81,13 @@ This outputs **ASCII table format** (for humans to read):
 ### ✅ What's Correct
 
 Use build artifacts from `out/` folder:
+
 ```bash
 cat out/Forter.sol/Forter.json | jq '.abi' > ../frontend/src/abis/Forter.json
 ```
 
 This outputs **proper JSON array**:
+
 ```json
 [
   {
@@ -107,18 +116,19 @@ This outputs **proper JSON array**:
 
 ## 📂 Scripts Overview
 
-| Script | What It Does | When to Use |
-|--------|-------------|-------------|
-| `generate-abis.sh` | Generate ABIs from build | After code changes |
-| `fix-abis.sh` | Fix malformed ABIs | When ABI import errors occur |
-| `update-frontend.sh` | ABIs + Addresses | After deployment |
-| `menu.sh` | Interactive menu | For all operations |
+| Script               | What It Does             | When to Use                  |
+| -------------------- | ------------------------ | ---------------------------- |
+| `generate-abis.sh`   | Generate ABIs from build | After code changes           |
+| `fix-abis.sh`        | Fix malformed ABIs       | When ABI import errors occur |
+| `update-frontend.sh` | ABIs + Addresses         | After deployment             |
+| `menu.sh`            | Interactive menu         | For all operations           |
 
 ---
 
 ## 🎯 Common Scenarios
 
 ### Scenario 1: Modified Smart Contract Code
+
 ```bash
 # 1. Test your changes
 forge test
@@ -134,6 +144,7 @@ cd ../frontend && npm run dev
 ```
 
 ### Scenario 2: Just Deployed to Testnet
+
 ```bash
 # Update everything (ABIs + contract addresses)
 ./scripts/update-frontend.sh sepolia
@@ -143,6 +154,7 @@ cat ../frontend/src/config/contracts.ts
 ```
 
 ### Scenario 3: ABI Import Error in Frontend
+
 ```bash
 # You see: "const assertions can only be applied to..."
 # This means ABIs are malformed
@@ -156,6 +168,7 @@ npm run dev
 ```
 
 ### Scenario 4: Fresh Clone / New Setup
+
 ```bash
 # 1. Install Foundry
 curl -L https://foundry.paradigm.xyz | bash
@@ -193,6 +206,7 @@ forge script script/Deploy.s.sol:DeployScript \
 ## 🐛 Troubleshooting
 
 ### "jq: command not found"
+
 ```bash
 # Install jq
 sudo apt update && sudo apt install jq
@@ -201,23 +215,27 @@ sudo apt update && sudo apt install jq
 ```
 
 ### "Permission denied"
+
 ```bash
 chmod +x scripts/*.sh COMMANDS.sh
 ```
 
 ### TypeScript error: "A 'const' assertions can only be applied to..."
+
 ```bash
 # This means your ABIs are malformed (table format)
 ./scripts/fix-abis.sh
 ```
 
 ### "Cannot find module '../abis/Forter.json'"
+
 ```bash
 # ABIs not generated yet
 ./scripts/generate-abis.sh
 ```
 
 ### Contract addresses are wrong/outdated
+
 ```bash
 # After redeployment
 ./scripts/update-frontend.sh sepolia
@@ -231,6 +249,7 @@ nano ../frontend/src/config/contracts.ts
 ## 📋 Complete Command Reference
 
 ### Build & Test
+
 ```bash
 forge clean                    # Clean build artifacts
 forge build                    # Build contracts
@@ -244,6 +263,7 @@ forge fmt                      # Format code
 ```
 
 ### ABI Generation
+
 ```bash
 ./scripts/generate-abis.sh     # Generate ABIs (recommended)
 ./scripts/fix-abis.sh          # Fix malformed ABIs
@@ -251,8 +271,9 @@ forge fmt                      # Format code
 ```
 
 ### Deployment
+
 ```bash
-# Base Sepolia
+# Monad
 forge script script/Deploy.s.sol:DeployScript \
   --rpc-url $BASE_SEPOLIA_RPC_URL \
   --private-key $PRIVATE_KEY \
@@ -270,6 +291,7 @@ forge script script/Deploy.s.sol:DeployScript \
 ```
 
 ### Post-Deployment
+
 ```bash
 # Transfer ReputationNFT ownership
 cast send $REPUTATION_NFT_ADDRESS \
@@ -291,7 +313,7 @@ cast send $GOVERNANCE_ADDRESS \
 
 - **Foundry Book**: https://book.getfoundry.sh/
 - **Base Docs**: https://docs.base.org/
-- **Base Sepolia Faucet**: https://www.coinbase.com/faucets/base-ethereum-goerli-faucet
+- **Monad Faucet**: https://www.coinbase.com/faucets/base-ethereum-goerli-faucet
 - **BaseScan (Sepolia)**: https://sepolia.basescan.org
 - **BaseScan (Mainnet)**: https://basescan.org
 
@@ -311,6 +333,7 @@ cast send $GOVERNANCE_ADDRESS \
 ## 🎓 Learning Resources
 
 ### New to Foundry?
+
 ```bash
 # Read the book
 https://book.getfoundry.sh/
@@ -322,6 +345,7 @@ forge test
 ```
 
 ### New to Base?
+
 ```bash
 # Check Base documentation
 https://docs.base.org/
@@ -335,6 +359,7 @@ https://www.coinbase.com/faucets/base-ethereum-goerli-faucet
 ## ✅ Checklist
 
 Before deployment:
+
 - [ ] All tests passing (`forge test`)
 - [ ] Code formatted (`forge fmt`)
 - [ ] Contracts under 24KB (`forge build --sizes`)
@@ -343,6 +368,7 @@ Before deployment:
 - [ ] ABIs generated (`./scripts/generate-abis.sh`)
 
 After deployment:
+
 - [ ] Contracts verified on BaseScan
 - [ ] Post-deployment setup complete
 - [ ] Frontend addresses updated (`./scripts/update-frontend.sh`)

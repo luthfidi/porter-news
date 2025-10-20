@@ -1,6 +1,6 @@
 # Panduan Deployment Kontrak Forter
 
-Dokumen ini menjelaskan cara melakukan deployment smart contract Forter ke jaringan testnet Base Sepolia.
+Dokumen ini menjelaskan cara melakukan deployment smart contract Forter ke jaringan testnet Monad.
 
 ## ⚡️ Cara Cepat (Rekomendasi)
 
@@ -33,7 +33,7 @@ chmod +x COMMANDS.sh
 ./COMMANDS.sh
 ```
 
-Skrip akan mendeploy kontrak Anda ke Base Sepolia. Setelah selesai, skrip akan menampilkan **satu perintah manual** yang harus Anda jalankan untuk menyelesaikan setup. Cukup salin dan jalankan perintah tersebut.
+Skrip akan mendeploy kontrak Anda ke Monad. Setelah selesai, skrip akan menampilkan **satu perintah manual** yang harus Anda jalankan untuk menyelesaikan setup. Cukup salin dan jalankan perintah tersebut.
 
 ---
 
@@ -41,17 +41,17 @@ Skrip akan mendeploy kontrak Anda ke Base Sepolia. Setelah selesai, skrip akan m
 
 ### Prasyarat
 
--   **Foundry**: Pastikan Anda sudah menginstal Foundry. Jika belum, ikuti [panduan instalasi resmi](https://book.getfoundry.sh/getting-started/installation).
+- **Foundry**: Pastikan Anda sudah menginstal Foundry. Jika belum, ikuti [panduan instalasi resmi](https://book.getfoundry.sh/getting-started/installation).
 
 ### Jaringan
 
--   **Base Sepolia (Testnet)**
-    -   **Chain ID**: `84532`
-    -   **RPC URL**: `https://sepolia.base.org`
-    -   **Explorer**: `https://sepolia.basescan.org`
-    -   **Faucet (untuk mendapatkan ETH gratis)**: `https://www.coinbase.com/faucets/base-sepolia-faucet`
+- **Monad (Testnet)**
+  - **Chain ID**: `84532`
+  - **RPC URL**: `https://sepolia.base.org`
+  - **Explorer**: `https://sepolia.basescan.org`
+  - **Faucet (untuk mendapatkan ETH gratis)**: `https://www.coinbase.com/faucets/base-sepolia-faucet`
 
 ### Tentang Skrip Deployment
 
--   `script/Deploy.s.sol`: Ini adalah skrip utama yang ditulis dalam Solidity untuk menangani logika deployment.
--   `COMMANDS.sh`: Skrip shell pembantu yang menyederhanakan eksekusi `Deploy.s.sol` dengan parameter yang benar untuk Base Sepolia.
+- `script/Deploy.s.sol`: Ini adalah skrip utama yang ditulis dalam Solidity untuk menangani logika deployment.
+- `COMMANDS.sh`: Skrip shell pembantu yang menyederhanakan eksekusi `Deploy.s.sol` dengan parameter yang benar untuk Monad.

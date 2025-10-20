@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # ==============================================================================
-# == Forter Smart Contract - DEPLOY TO BASE SEPOLIA (TESTNET) ==
+# == Forter Smart Contract - DEPLOY TO MONAD (TESTNET) ==
 # ==============================================================================
 #
-# File ini akan menjalankan seluruh proses deployment ke testnet Base Sepolia.
+# File ini akan menjalankan seluruh proses deployment ke testnet Monad.
 #
 # LANGKAH:
 # 1. Pastikan Anda sudah menyalin `.env.example` ke `.env`.
@@ -14,7 +14,7 @@
 # APA YANG SKRIP INI LAKUKAN:
 # 1. Membaca variabel dari file `.env`.
 # 2. Menjalankan `forge build` untuk mengkompilasi kontrak.
-# 3. Menjalankan `forge script` untuk deploy ke Base Sepolia.
+# 3. Menjalankan `forge script` untuk deploy ke Monad.
 #    - `--broadcast`: Mengirimkan transaksi ke jaringan.
 #    - `--verify`: Memverifikasi kontrak di Basescan secara otomatis.
 # 4. Memberikan instruksi untuk langkah manual pasca-deployment.
@@ -28,7 +28,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}Mempersiapkan deployment ke Base Sepolia...${NC}"
+echo -e "${BLUE}Mempersiapkan deployment ke Monad...${NC}"
 
 # 1. Cek apakah file .env ada
 if [ ! -f .env ]; then
@@ -65,7 +65,7 @@ echo "$output"
 # Cek exit code dari command sebelumnya
 if [ $exit_code -eq 0 ]; then
     echo -e "\n${GREEN}🎉 DEPLOYMENT SELESAI! 🎉${NC}"
-    echo -e "Kontrak Anda seharusnya sudah live di Base Sepolia dan terverifikasi di Basescan."
+    echo -e "Kontrak Anda seharusnya sudah live di Monad dan terverifikasi di Basescan."
 
     # Ekstrak alamat dari output log
     forter_address=$(echo "$output" | grep 'Forter deployed at:' | awk '{print $4}')

@@ -407,7 +407,6 @@ forge script script/Deploy.s.sol:DeployScript \
 **Explorer:** All contracts verifiable on https://testnet.monadexplorer.com
 
 **Performance Gains:**
-- Base Sepolia (previous): ~2-3s stake confirmation
 - Monad Devnet: <500ms confirmation
 - Gas cost reduction: ~70% vs Ethereum L1
 

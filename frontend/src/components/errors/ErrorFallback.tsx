@@ -55,7 +55,7 @@ export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
     displayTitle = 'Smart Contract Error';
     suggestions = [
       'Check your wallet balance',
-      'Ensure you\'re on the correct network (Base Sepolia)',
+      'Ensure you\'re on the correct network (Monad)',
       'Try increasing gas limit',
     ];
   } else if (isNetworkError) {

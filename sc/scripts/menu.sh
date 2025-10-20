@@ -35,7 +35,7 @@ show_menu() {
     echo "  10) Update frontend (ABIs + Addresses) ⭐"
     echo ""
     echo -e "${YELLOW}Deployment:${NC}"
-    echo "  11) Deploy to Base Sepolia"
+    echo "  11) Deploy to Monad"
     echo "  12) Deploy to Base Mainnet (PRODUCTION)"
     echo "  13) Post-deployment setup"
     echo ""
@@ -112,7 +112,7 @@ while true; do
             read -p "Press Enter to continue..."
             ;;
         11)
-            echo -e "${YELLOW}Deploying to Base Sepolia...${NC}"
+            echo -e "${YELLOW}Deploying to Monad...${NC}"
             if [ ! -f .env ]; then
                 echo -e "${RED}Error: .env file not found. Copy .env.example to .env and fill in your values.${NC}\n"
                 read -p "Press Enter to continue..."
