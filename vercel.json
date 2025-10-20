@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "buildCommand": "cd frontend && pnpm build",
+  "installCommand": "cd frontend && pnpm install",
+  "devCommand": "cd frontend && pnpm dev",
+  "outputDirectory": "frontend/.next",
+  "framework": "nextjs",
+  "regions": ["sin1"],
+  "functions": {
+    "frontend/**/*.{js,ts,tsx}": {
+      "maxDuration": 30
+    }
+  }
+}
