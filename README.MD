@@ -2,7 +2,7 @@
 
 **MetaMask Smart Accounts Hackathon x Monad x Envio Submission**
 
-[🌐 Live Demo](https://porter-news.vercel.app/) • [🔮 Farcaster MiniApp](https://farcaster.xyz/miniapps/gM4PKvjzcF47/forter) • [📺 Demo Video](https://www.youtube.com/watch?v=Dxlh9GIQCZM)
+[🌐 Live Demo](https://porter-news.vercel.app/) • [🔮 Farcaster MiniApp](https://farcaster.xyz/miniapps/gM4PKvjzcF47/forter) • [📺 Demo Video](https://www.youtube.com/watch?v=Dxlh9GIQCZM) • [🏆 HackQuest](https://www.hackquest.io/projects/MetaMask-Smart-Accounts-x-Monad-Dev-Cook-Off-Porter-News)
 
 ---
 
@@ -66,12 +66,13 @@ All resolve together, but distribute rewards independently!
 ```
 
 ### 3. Dynamic Reputation NFTs
-Soulbound tokens that update visually based on performance:
-- 🥉 Novice (0-49% accuracy) → 🥈 Analyst (50-69%) → 🥇 Expert (70-84%)
-- 💎 Master (85-94%) → 👑 Legend (95-100%)
+Soulbound tokens that update visually based on performance points:
+- 🥉 Novice (0-199 points) → 🥈 Analyst (200-499 points) → 🥇 Expert (500-999 points)
+- 💎 Master (1,000-4,999 points) → 👑 Legend (5,000+ points)
+- Points earned from correct predictions (-30 for wrong, +100 for correct)
 - Portable credentials across Web3 ecosystems
 
-### 4. MetaMask Smart Accounts
+### 5. MetaMask Smart Accounts
 - **Gasless transactions** - Paymaster sponsors gas fees
 - **Delegation framework** - Grant permissions to AI agents
 - **Enhanced security** - Passkey-based recovery
@@ -114,22 +115,34 @@ sequenceDiagram
 
 ---
 
-## 🛠️ Tech Stack
+## 🏗️ Architecture Overview
 
-### Frontend
-- **Next.js 15** (App Router) + **TypeScript**
-- **TailwindCSS** + **shadcn/ui** for design
-- **wagmi** + **viem** + **RainbowKit** for Web3
-- **Farcaster MiniApp SDK** for social integration
+### Smart Contract Flow
 
-### Smart Contracts
-- **Solidity ^0.8.20** + **Foundry** framework
-- **ERC-4337** Smart Accounts + **ERC-721** Soulbound NFTs
-- **Monad Testnet** deployment (Chain ID: 10143)
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+graph TB
+    User[👤 User] --> Forter[🔒 Forter.sol<br/>Core Protocol]
+    Forter --> StakingPool[💰 StakingPool.sol<br/>Reward Management]
+    Forter --> ReputationNFT[🏆 ReputationNFT.sol<br/>Reputation System]
+    Forter --> Governance[⚖️ Governance.sol<br/>DAO Framework]
 
-### Infrastructure
-- **Vercel** hosting + **Monad RPC** for blockchain
-- **Envio** indexing for real-time data
+    StakingPool --> USDC[💵 USDC Token]
+    ReputationNFT --> NFTs[🎨 Dynamic NFTs]
+
+    subgraph CoreFunctions ["📋 Core Functions"]
+        NewsCreation[News Creation]
+        PoolCreation[Pool Creation]
+        ResolutionLogic[Resolution Logic]
+        AutoDistribute[Auto-Distribute]
+    end
+```
+
+### 🛠️ Tech Stack
+
+**Frontend**: Next.js 15 + TypeScript + TailwindCSS + RainbowKit <br>
+**Smart Contracts**: Solidity 0.8.20 + Foundry + ERC-4337 + ERC-721 <br>
+**Infrastructure**: Vercel + Monad RPC + Envio Indexer
 
 ---
 
@@ -203,45 +216,33 @@ forge script script/Deploy.s.sol:DeployScript \
 
 ---
 
+## 📊 Key Differentiators
+
+| Feature | Traditional Markets | Porter News |
+|---------|-------------------|-------------|
+| **Pool Structure** | 1 shared pool | Multiple independent pools |
+| **Focus** | Bet on outcomes | Fund credible analysis |
+| **Rewards** | Winner takes all | 20% creator / 80% stakers |
+| **Reputation** | Off-chain reputation | On-chain soulbound NFTs |
+| **Value** | Speculation | Knowledge discovery |
+
 ## 📊 Use Cases
 
-### For Analysts
-- Build verifiable on-chain reputation
-- Monetize accuracy without large audience
-- Earn 20% of pool stakes when correct
-- Portable Web3 credentials
-
-### For Stakers
-- Back credible analysis, not just outcomes
-- Diversify across multiple reasonings
-- Earn 80% share of winning pools
-- Support emerging analysts
-
-### For DAOs & DeFi
-- Source verified analyst credibility
-- Use reputation NFTs for governance weighting
-- Build trust layers for protocols
+**For Analysts**: Build reputation + monetize accuracy (20% rewards) <br>
+**For Stakers**: Back credible reasoning + earn 80% of winning pools <br>
+**For DAOs**: Source verified credibility + governance weighting <br>
+**For DeFi**: Reputation-based credit scoring + trust layers
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ Development Roadmap
 
-### ✅ Phase 0: MVP (Complete)
-- Core contracts on Monad + Farcaster MiniApp
-- MetaMask Smart Accounts integration
-- Mock resolution system
-
-### 🔨 Phase 1: Testnet Launch (Q1 2025)
-- Public users + AI oracle resolution
-- Enhanced analytics + mobile UI
-
-### 🔨 Phase 2: Mainnet Beta (Q2 2025)
-- Monad mainnet + Chainlink oracles
-- DAO governance + cross-chain
-
-### 🔨 Phase 3: Ecosystem (Q3-Q4 2025)
-- Reputation integrations (DAOs, DeFi)
-- Advanced scoring + multi-chain support
+| Phase | Timeline | Status | Key Features |
+|-------|----------|--------|--------------|
+| **MVP** | Oct 2025 | ✅ Complete | Core contracts + Farcaster MiniApp + Smart Accounts |
+| **Testnet** | Q1 2025 | 🔄 Next | Public users + AI oracles + analytics |
+| **Mainnet** | Q2 2025 | 📋 Planned | Monad mainnet + Chainlink + DAO governance |
+| **Ecosystem** | Q3-Q4 2025 | 📋 Vision | Reputation integrations + multi-chain support |
 
 ---
 
@@ -259,13 +260,13 @@ Porter transforms ephemeral social media posts into **verifiable, yield-bearing 
 
 ---
 
-## 🔗 Links
+## 🔗 Quick Links
 
-- **Live Demo**: [porter-news.vercel.app](https://porter-news.vercel.app)
-- **GitHub**: [github.com/luthfidi/porter-news](https://github.com/luthfidi/porter-news)
-- **Explorer**: [testnet.monadexplorer.com](https://testnet.monadexplorer.com)
-- **Twitter**: [@PorterNews](https://twitter.com/PorterNews)
-- **Farcaster**: [@porter](https://warpcast.com/porter)
+**🌐 Live App**: [porter-news.vercel.app](https://porter-news.vercel.app) • **📺 Demo**: [YouTube](https://www.youtube.com/watch?v=Dxlh9GIQCZM) • **🏆 HackQuest**: [Submit](https://www.hackquest.io/projects/MetaMask-Smart-Accounts-x-Monad-Dev-Cook-Off-Porter-News)
+
+**🔗 Technical**: [GitHub](https://github.com/luthfidi/porter-news) • **🔍 Explorer**: [Monad Explorer](https://testnet.monadexplorer.com) • **📱 Farcaster**: [@porter](https://warpcast.com/porter)
+
+**🚀 Ready for MetaMask Smart Accounts Hackathon evaluation!**
 
 ---
 
