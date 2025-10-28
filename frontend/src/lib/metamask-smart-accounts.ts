@@ -3,10 +3,10 @@
  * Porter News - Information Finance Protocol on Monad
  */
 
-import { createDelegation, revokeDelegation, signDelegation } from '@metamask/delegation-toolkit';
-import { config, publicClient } from './wagmi';
+import { createDelegation, revokeDelegation } from '@metamask/delegation-toolkit';
+import { config } from './wagmi';
 import { contracts } from '../config/contracts';
-import { parseEther, parseUnits } from 'viem';
+import { parseUnits } from 'viem';
 
 export interface DelegationPermission {
   // Permission to create pools on behalf of user
@@ -69,7 +69,7 @@ export async function createAIDelegation(
   userAddress: string,
   agentConfig: AIAgentConfig,
   signature: string
-) {
+): Promise<any> {
   try {
     const delegation = await createDelegation({
       delegate: agentConfig.id,
@@ -101,7 +101,7 @@ export async function createAIDelegation(
 /**
  * Revoke delegation from AI agent
  */
-export async function revokeAIDelegation(delegationId: string, userAddress: string) {
+export async function revokeAIDelegation(delegationId: string, userAddress: string): Promise<boolean> {
   try {
     await revokeDelegation({
       delegationId,
@@ -196,7 +196,7 @@ export async function getAIPerformance(agentId: string): Promise<AIPerformance> 
  */
 export async function signDelegationMessage(
   message: string,
-  signer: any
+  signer: { signMessage: (message: string) => Promise<string> }
 ): Promise<string> {
   try {
     const signature = await signer.signMessage(message);
@@ -214,9 +214,9 @@ export async function executeDelegatedTransaction(
   agentId: string,
   targetContract: string,
   functionName: string,
-  args: any[],
+  args: unknown[],
   delegationId: string
-) {
+): Promise<string> {
   try {
     // This would use the delegation to execute the transaction
     // The actual implementation depends on the delegation toolkit

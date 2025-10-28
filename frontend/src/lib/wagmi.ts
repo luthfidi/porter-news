@@ -1,6 +1,5 @@
 import { createConfig, http, fallback } from 'wagmi';
 import { defineChain } from 'viem';
-import { createPublicClient } from 'viem';
 
 // Define Monad testnet chain
 const monadTestnet = defineChain({

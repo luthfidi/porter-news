@@ -56,14 +56,14 @@ export function useMetaMaskSmartAccounts(): UseMetaMaskSmartAccountsReturn {
     if (address && isDelegationEnabled) {
       refreshDelegations();
     }
-  }, [address, isDelegationEnabled]);
+  }, [address, isDelegationEnabled, refreshDelegations]);
 
   // Load AI performances on mount
   useEffect(() => {
     if (isDelegationEnabled) {
       refreshPerformances();
     }
-  }, [isDelegationEnabled]);
+  }, [isDelegationEnabled, refreshPerformances]);
 
   const refreshDelegations = useCallback(async () => {
     if (!address || !isDelegationEnabled) return;
@@ -80,7 +80,7 @@ export function useMetaMaskSmartAccounts(): UseMetaMaskSmartAccountsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [address, isDelegationEnabled]);
+  }, [address, isDelegationEnabled, refreshDelegations]);
 
   const refreshPerformances = useCallback(async () => {
     if (!isDelegationEnabled) return;
