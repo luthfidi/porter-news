@@ -100,12 +100,22 @@ export function getTierIcon(tier: string): string {
   }
 }
 
-// Calculate tier based on accuracy
-export function calculateTier(accuracy: number): 'Novice' | 'Analyst' | 'Expert' | 'Master' | 'Legend' {
-  if (accuracy >= 95) return 'Legend';
-  if (accuracy >= 85) return 'Master';
-  if (accuracy >= 70) return 'Expert';
-  if (accuracy >= 50) return 'Analyst';
+// Calculate tier based on reputation points (UPDATED FOR POINT-BASED SYSTEM)
+// Points = Σ (Base Points × Stake Multiplier)
+// Base: +100 correct, -30 wrong
+// Multipliers: 1.0x (<$100), 1.5x ($100-$499), 2.0x ($500-$999), 2.5x ($1K-$4.9K), 3.0x ($5K+)
+export function calculateTier(reputationPoints: number, totalPools: number = 0): 'Novice' | 'Analyst' | 'Expert' | 'Master' | 'Legend' {
+  // Tier thresholds from smart contract:
+  // Novice: 0-199 points
+  // Analyst: 200-499 points
+  // Expert: 500-999 points + 5+ pools
+  // Master: 1000-4999 points + 10+ pools
+  // Legend: 5000+ points + 20+ pools
+
+  if (reputationPoints >= 5000 && totalPools >= 20) return 'Legend';
+  if (reputationPoints >= 1000 && totalPools >= 10) return 'Master';
+  if (reputationPoints >= 500 && totalPools >= 5) return 'Expert';
+  if (reputationPoints >= 200) return 'Analyst';
   return 'Novice';
 }
 

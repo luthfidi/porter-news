@@ -38,8 +38,8 @@ contract StakingPool is ReentrancyGuard, Ownable {
     mapping(uint256 => mapping(uint256 => mapping(address => bool))) public hasStaked; // newsId => poolId => user => bool
     mapping(address => StakeRecord[]) public userStakeHistory;
 
-    // Reward tracking
-    mapping(uint256 => mapping(uint256 => mapping(address => bool))) public hasClaimedReward; // newsId => poolId => user => claimed
+    // Reward tracking (for auto-distribute)
+    mapping(uint256 => mapping(uint256 => mapping(address => bool))) public rewardDistributed; // newsId => poolId => user => distributed
 
     // Events
     event Staked(
@@ -185,77 +185,8 @@ contract StakingPool is ReentrancyGuard, Ownable {
         emit Withdrawn(newsId, poolId, msg.sender, amount);
     }
 
-    // Calculate claimable rewards (view function)
-    function calculateRewards(
-        uint256 newsId,
-        uint256 poolId,
-        bool poolPosition,
-        bool newsOutcome,
-        address user
-    ) public view returns (uint256) {
-        Stake storage userStake = stakes[newsId][poolId][user];
-        if (userStake.amount == 0 || userStake.isWithdrawn) return 0;
-
-        // Check if already claimed
-        if (hasClaimedReward[newsId][poolId][user]) return 0;
-
-        // Determine pool outcome (did pool creator's position match news outcome?)
-        bool poolCorrect = (poolPosition == newsOutcome);
-
-        // Determine if user won
-        // User wins if: (user agrees with pool AND pool correct) OR (user disagrees with pool AND pool wrong)
-        bool userPosition = userStake.position;
-        bool userWon = (userPosition == poolPosition && poolCorrect) ||
-            (userPosition != poolPosition && !poolCorrect);
-
-        if (!userWon) return 0;
-
-        // Calculate reward
-        uint256 totalPool = totalStaked[newsId][poolId];
-        uint256 winningPool = userWon && (userPosition == poolPosition)
-            ? agreeStakes[newsId][poolId]
-            : disagreeStakes[newsId][poolId];
-        uint256 losingPool = totalPool - winningPool;
-
-        if (winningPool == 0) return 0;
-
-        // User's share of winning pool
-        uint256 userShare = (userStake.amount * 1e18) / winningPool;
-
-        // User gets their stake back + proportional share of losing pool
-        uint256 winnings = (losingPool * userShare) / 1e18;
-
-        // Apply protocol fee (2%)
-        uint256 fee = (winnings * 200) / 10000;
-        uint256 reward = userStake.amount + winnings - fee;
-
-        return reward;
-    }
-
-    // Claim rewards after resolution
-    function claimRewards(
-        uint256 newsId,
-        uint256 poolId,
-        bool poolPosition,
-        bool newsOutcome
-    ) external nonReentrant {
-        require(!hasClaimedReward[newsId][poolId][msg.sender], "Already claimed");
-
-        uint256 reward = calculateRewards(newsId, poolId, poolPosition, newsOutcome, msg.sender);
-        require(reward > 0, "No reward to claim");
-
-        // Mark as claimed
-        hasClaimedReward[newsId][poolId][msg.sender] = true;
-
-        // Mark stake as withdrawn
-        Stake storage userStake = stakes[newsId][poolId][msg.sender];
-        userStake.isWithdrawn = true;
-
-        // Transfer reward
-        require(stakingToken.transfer(msg.sender, reward), "Reward transfer failed");
-
-        emit RewardClaimed(newsId, poolId, msg.sender, reward);
-    }
+    // NOTE: Manual claim functions removed - using auto-distribute instead
+    // Rewards are automatically distributed when news is resolved
 
     // View functions
     function getUserStake(uint256 newsId, uint256 poolId, address user)
@@ -300,5 +231,23 @@ contract StakingPool is ReentrancyGuard, Ownable {
             disagreeStakes[newsId][poolId],
             poolStakers[newsId][poolId].length
         );
+    }
+
+    // Called by Forter contract to mark stake as distributed (auto-distribute)
+    function markStakeAsDistributed(
+        uint256 newsId,
+        uint256 poolId,
+        address user
+    ) external onlyOwner {
+        require(!rewardDistributed[newsId][poolId][user], "Already distributed");
+
+        Stake storage userStake = stakes[newsId][poolId][user];
+        userStake.isWithdrawn = true; // Mark as distributed
+        rewardDistributed[newsId][poolId][user] = true;
+    }
+
+    // Transfer tokens to recipient (called by Forter during auto-distribute)
+    function transferReward(address recipient, uint256 amount) external onlyOwner {
+        require(stakingToken.transfer(recipient, amount), "Transfer failed");
     }
 }

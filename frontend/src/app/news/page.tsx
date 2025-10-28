@@ -4,18 +4,19 @@ import { useState, useEffect, useMemo } from 'react';
 import { useGlobalStore } from '@/store/useGlobalStore';
 import { News } from '@/types';
 import { MOCK_NEWS, MOCK_POOLS, MOCK_REPUTATION } from '@/lib/mock-data';
+import { newsService } from '@/lib/services';
 import NewsCard from '@/components/news/NewsCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import Image from 'next/image';
 import { calculateNewsQualityScore, QualityFilter, ActivityFilter } from '@/lib/quality-scoring';
+import { Trophy, DollarSign, Layers, Clock, ChevronDown } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Crypto', 'Macro', 'Tech', 'Sports', 'Politics'];
 
 export default function NewsPage() {
-  const { newsList, setNewsList, loading, setLoading } = useGlobalStore();
+  const { newsList, setNewsList, pools, loading, setLoading } = useGlobalStore();
   const [filteredNews, setFilteredNews] = useState<News[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'resolved'>('all');
@@ -23,15 +24,26 @@ export default function NewsPage() {
   const [sortBy, setSortBy] = useState<'quality' | 'endDate' | 'totalStaked' | 'totalPools'>('quality');
   const [qualityFilter, setQualityFilter] = useState<QualityFilter>('all');
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('any');
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Load mock data on component mount
+  // Load news data on component mount
   useEffect(() => {
-    setLoading('news', true);
-    // Simulate API call
-    setTimeout(() => {
-      setNewsList(MOCK_NEWS);
-      setLoading('news', false);
-    }, 1000);
+    const loadNews = async () => {
+      setLoading('news', true);
+      try {
+        const newsData = await newsService.getAll();
+        setNewsList(newsData);
+        console.log('[NewsPage] Loaded', newsData.length, 'news items from contract');
+      } catch (error) {
+        console.error('[NewsPage] Failed to load news:', error);
+        // Fallback to mock data if contract fails
+        setNewsList(MOCK_NEWS);
+      } finally {
+        setLoading('news', false);
+      }
+    };
+
+    loadNews();
   }, [setNewsList, setLoading]);
 
   // Calculate quality scores for all news
@@ -41,15 +53,26 @@ export default function NewsPage() {
     );
 
     return newsList.map(news => {
-      const pools = MOCK_POOLS.filter(p => p.newsId === news.id);
-      const qualityScore = calculateNewsQualityScore(news, pools, reputationMap);
+      // Use contract pools if available, fallback to mock pools
+      const contractPools = pools.filter(p => p.newsId === news.id);
+      const mockPools = MOCK_POOLS.filter(p => p.newsId === news.id);
+      const allPools = contractPools.length > 0 ? contractPools : mockPools;
+      const qualityScore = calculateNewsQualityScore(news, allPools, reputationMap);
+
+      console.log('[NewsPage] Quality calculation for news', news.id, {
+        contractPools: contractPools.length,
+        mockPools: mockPools.length,
+        usedPools: allPools.length,
+        qualityScore,
+        title: news.title
+      });
 
       return {
         ...news,
         qualityScore,
       };
     });
-  }, [newsList]);
+  }, [newsList, pools]);
 
   // Filter and sort news
   useEffect(() => {
@@ -124,127 +147,191 @@ export default function NewsPage() {
   const totalPools = activeNews.reduce((sum, news) => sum + news.totalPools, 0);
 
   return (
-    <div className="min-h-screen pt-20 pb-16">
+    <div className="min-h-screen pt-16 md:pt-24 pb-32 md:pb-16">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Image src="/forter.webp" alt="PORTER" width={40} height={40} className="w-10 h-10 rounded-lg" />
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+        {/* Header - Cleaner Layout */}
+        <div className="mb-6 md:mb-10">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">
                 News Explorer
               </h1>
+              <p className="text-muted-foreground text-sm md:text-base">
+                Discover predictions and stake on credibility
+              </p>
             </div>
-            <Link href="/news/create">
-              <Button size="lg" className="bg-gradient-to-r from-primary to-primary/90">
+            {/* Desktop Create Button */}
+            <Link href="/news/create" className="hidden md:block">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 + Create NEWS
               </Button>
             </Link>
           </div>
-          <p className="text-muted-foreground text-lg max-w-3xl">
-            Discover active predictions. Create pools with your analysis or stake on existing pools to back credible reasoning.
-          </p>
+
+          {/* Stats Overview - Inline with reduced emphasis */}
+          <div className="flex items-center gap-4 md:gap-8 text-sm md:text-base">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Active:</span>
+              <span className="font-semibold text-primary">{activeNews.length}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Pools:</span>
+              <span className="font-semibold text-accent">{totalPools}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Staked:</span>
+              <span className="font-semibold">${totalStaked.toLocaleString()}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border border-border bg-card hover:bg-secondary transition-all duration-300 hover:scale-105 hover:shadow-md">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-primary mb-1">
-                {activeNews.length}
-              </div>
-              <div className="text-sm text-muted-foreground">Active News</div>
-            </CardContent>
-          </Card>
-          <Card className="border border-border bg-card hover:bg-secondary transition-all duration-300 hover:scale-105 hover:shadow-md">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-accent mb-1">
-                {totalPools}
-              </div>
-              <div className="text-sm text-muted-foreground">Total Pools</div>
-            </CardContent>
-          </Card>
-          <Card className="border border-border bg-card hover:bg-secondary transition-all duration-300 hover:scale-105 hover:shadow-md">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-foreground mb-1">
-                ${totalStaked.toLocaleString()}
-              </div>
-              <div className="text-sm text-muted-foreground">Total Staked</div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Mobile Floating Action Button */}
+        <Link href="/news/create" className="md:hidden fixed bottom-10 right-4 z-40">
+          <Button size="lg" className="h-12 w-12 rounded-full bg-gradient-to-r from-primary to-primary/90 shadow-lg shadow-primary/30 p-0">
+            <span className="text-2xl">+</span>
+          </Button>
+        </Link>
 
-        {/* Filters */}
-        <Card className="border border-border/50 bg-card/50 backdrop-blur-sm mb-8">
-          <CardContent className="p-6">
-            {/* Search and Sort Row */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-6">
-              <div className="relative flex-1">
-                <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <Input
-                  placeholder="Search by title or description..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-background/80 border-border/50 focus:border-primary transition-colors"
-                />
-              </div>
+        {/* Filters - Streamlined */}
+        <div className="mb-6 md:mb-8">
+          {/* Search and Sort Row */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <Input
+                placeholder="Search by title or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-10"
+              />
+            </div>
+
+            {/* Enhanced Sort Dropdown */}
+            <div className="relative">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'quality' | 'endDate' | 'totalStaked' | 'totalPools')}
-                className="px-4 py-2 rounded-md border border-border/50 bg-background/80 text-sm font-medium hover:border-primary transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[160px]"
+                className="appearance-none w-full sm:w-[200px] h-10 pl-10 pr-10 rounded-md border border-border bg-card text-sm font-medium hover:bg-secondary hover:border-primary transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               >
-                <option value="quality">🏆 Quality Score</option>
-                <option value="totalStaked">💰 Most Staked</option>
-                <option value="totalPools">🏊 Most Pools</option>
-                <option value="endDate">⏰ Ending Soon</option>
+                <option value="quality">Quality Score</option>
+                <option value="totalStaked">Most Staked</option>
+                <option value="totalPools">Most Pools</option>
+                <option value="endDate">Ending Soon</option>
               </select>
+
+              {/* Icon on the left */}
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                {sortBy === 'quality' && <Trophy className="w-4 h-4 text-primary" />}
+                {sortBy === 'totalStaked' && <DollarSign className="w-4 h-4 text-accent" />}
+                {sortBy === 'totalPools' && <Layers className="w-4 h-4 text-primary" />}
+                {sortBy === 'endDate' && <Clock className="w-4 h-4 text-orange-500" />}
+              </div>
+
+              {/* Chevron on the right */}
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Mobile: Toggle Filters Button */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="md:hidden w-full flex items-center justify-between px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted text-sm font-medium mb-3 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filters
+              {(selectedCategory !== 'All' || selectedStatus !== 'all' || qualityFilter !== 'all' || activityFilter !== 'any') && (
+                <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              )}
+            </span>
+            <svg
+              className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {/* Filter Chips - Simplified */}
+          <div className={`${showFilters ? 'block' : 'hidden md:block'}`}>
+            {/* Desktop: Single row of filters */}
+            <div className="hidden md:flex md:flex-wrap md:items-center md:gap-2">
+              {/* Status */}
+              {(['all', 'active', 'resolved'] as const).map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setSelectedStatus(status)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    selectedStatus === status
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                  }`}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </button>
+              ))}
+              <div className="h-4 w-px bg-border mx-1" />
+              {/* Categories */}
+              {CATEGORIES.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    selectedCategory === category
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
             </div>
 
-            {/* Compact Filter Chips */}
-            <div className="space-y-3">
+            {/* Mobile: Vertical grouped filters */}
+            <div className="md:hidden space-y-3">
               {/* Status Filter */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider min-w-[70px]">Status</span>
+              <div>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Status</span>
                 <div className="flex flex-wrap gap-2">
                   {(['all', 'active', 'resolved'] as const).map((status) => (
                     <button
                       key={status}
                       onClick={() => setSelectedStatus(status)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                         selectedStatus === status
-                          ? status === 'active'
-                            ? 'bg-green-500 text-white shadow-md shadow-green-500/20'
-                            : status === 'resolved'
-                            ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
-                            : 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                          : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                       }`}
                     >
-                      {status === 'all' ? '•' : status === 'active' ? '⚡' : '✓'} {status.charAt(0).toUpperCase() + status.slice(1)}
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Category Filter */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider min-w-[70px]">Category</span>
+              <div>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Category</span>
                 <div className="flex flex-wrap gap-2">
                   {CATEGORIES.map((category) => (
                     <button
                       key={category}
                       onClick={() => setSelectedCategory(category)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                         selectedCategory === category
-                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                          : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                       }`}
                     >
                       {category}
@@ -252,123 +339,40 @@ export default function NewsPage() {
                   ))}
                 </div>
               </div>
-
-              {/* Quality Filter */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider min-w-[70px]">Quality</span>
-                <div className="flex flex-wrap gap-2">
-                  {(['all', 'decent', 'good', 'excellent'] as const).map((quality) => (
-                    <button
-                      key={quality}
-                      onClick={() => setQualityFilter(quality)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                        qualityFilter === quality
-                          ? quality === 'excellent'
-                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
-                            : quality === 'good'
-                            ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
-                            : quality === 'decent'
-                            ? 'bg-yellow-500 text-white shadow-md shadow-yellow-500/20'
-                            : 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                          : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      {quality === 'all' ? '•' : quality === 'excellent' ? '🏆' : quality === 'good' ? '⭐' : '✓'}{' '}
-                      {quality.charAt(0).toUpperCase() + quality.slice(1)}
-                      {quality !== 'all' && ` (${quality === 'decent' ? '40+' : quality === 'good' ? '60+' : '80+'})`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Activity Filter */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider min-w-[70px]">Activity</span>
-                <div className="flex flex-wrap gap-2">
-                  {(['any', 'active', 'popular', 'trending'] as const).map((activity) => (
-                    <button
-                      key={activity}
-                      onClick={() => setActivityFilter(activity)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                        activityFilter === activity
-                          ? activity === 'trending'
-                            ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
-                            : activity === 'popular'
-                            ? 'bg-purple-500 text-white shadow-md shadow-purple-500/20'
-                            : activity === 'active'
-                            ? 'bg-green-500 text-white shadow-md shadow-green-500/20'
-                            : 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                          : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
-                      }`}
-                    >
-                      {activity === 'any' ? '•' : activity === 'trending' ? '🔥' : activity === 'popular' ? '🌟' : '⚡'}{' '}
-                      {activity.charAt(0).toUpperCase() + activity.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* Active Filters Summary */}
-            {(searchQuery || selectedCategory !== 'All' || selectedStatus !== 'all' || qualityFilter !== 'all' || activityFilter !== 'any') && (
-              <div className="mt-4 pt-4 border-t border-border/30 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs flex-wrap">
-                  <span className="text-muted-foreground font-medium">Showing:</span>
-                  {selectedStatus !== 'all' && (
-                    <span className="px-2 py-1 rounded-md bg-blue-500/10 text-blue-600 font-medium">
-                      {selectedStatus}
-                    </span>
-                  )}
-                  {selectedCategory !== 'All' && (
-                    <span className="px-2 py-1 rounded-md bg-primary/10 text-primary font-medium">
-                      {selectedCategory}
-                    </span>
-                  )}
-                  {qualityFilter !== 'all' && (
-                    <span className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-600 font-medium">
-                      {qualityFilter} quality
-                    </span>
-                  )}
-                  {activityFilter !== 'any' && (
-                    <span className="px-2 py-1 rounded-md bg-purple-500/10 text-purple-600 font-medium">
-                      {activityFilter}
-                    </span>
-                  )}
+            {(searchQuery || selectedCategory !== 'All' || selectedStatus !== 'all') && (
+              <div className="mt-3 pt-3 border-t border-border/20 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-muted-foreground">Showing {filteredNews.length} {filteredNews.length === 1 ? 'result' : 'results'}</span>
                   {searchQuery && (
-                    <span className="px-2 py-1 rounded-md bg-accent/10 text-accent font-medium">
+                    <span className="px-2 py-0.5 rounded bg-accent/10 text-accent font-medium">
                       &quot;{searchQuery}&quot;
                     </span>
                   )}
-                  <span className="text-muted-foreground">
-                    ({filteredNews.length} {filteredNews.length === 1 ? 'result' : 'results'})
-                  </span>
                 </div>
                 <button
                   onClick={() => {
                     setSelectedCategory('All');
                     setSelectedStatus('all');
-                    setQualityFilter('all');
-                    setActivityFilter('any');
                     setSearchQuery('');
                   }}
-                  className="text-xs text-muted-foreground hover:text-foreground font-medium transition-colors flex items-center gap-1 group"
+                  className="text-muted-foreground hover:text-foreground font-medium transition-colors"
                 >
-                  <svg className="w-3 h-3 group-hover:rotate-90 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
                   Clear all
                 </button>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* News Grid */}
+        {/* News Grid - Mobile Optimized */}
         {loading.news ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="border border-border bg-card animate-pulse">
-                <CardContent className="p-6">
+                <CardContent className="p-4 md:p-6">
                   <div className="h-4 bg-muted rounded w-3/4 mb-3"></div>
                   <div className="h-3 bg-muted rounded w-full mb-2"></div>
                   <div className="h-3 bg-muted rounded w-2/3 mb-4"></div>
@@ -385,17 +389,17 @@ export default function NewsPage() {
             ))}
           </div>
         ) : filteredNews.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-fr">
             {filteredNews.map((news) => (
               <NewsCard key={news.id} news={news} />
             ))}
           </div>
         ) : (
           <Card className="border border-border bg-card">
-            <CardContent className="p-12 text-center">
+            <CardContent className="p-8 md:p-12 text-center">
               <div className="text-4xl mb-4">🔍</div>
-              <h3 className="text-xl font-semibold mb-2">No news found</h3>
-              <p className="text-muted-foreground mb-6">
+              <h3 className="text-lg md:text-xl font-semibold mb-2">No news found</h3>
+              <p className="text-sm md:text-base text-muted-foreground mb-6">
                 Try adjusting your search criteria or explore different categories.
               </p>
               <Button
@@ -409,30 +413,6 @@ export default function NewsPage() {
               </Button>
             </CardContent>
           </Card>
-        )}
-
-        {/* Call to Action */}
-        {filteredNews.length > 0 && (
-          <div className="mt-12 text-center">
-            <Card className="border border-border bg-card max-w-2xl mx-auto">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-bold mb-4">Ready to Share Your Prediction?</h3>
-                <p className="text-muted-foreground mb-6">
-                  Create a NEWS prediction or build a POOL with your analysis to stake on credibility and build on-chain reputation.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/news/create">
-                    <Button size="lg" className="bg-gradient-to-r from-primary to-primary/90">
-                      Create NEWS
-                    </Button>
-                  </Link>
-                  <Button size="lg" variant="outline">
-                    Learn More
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         )}
       </div>
     </div>

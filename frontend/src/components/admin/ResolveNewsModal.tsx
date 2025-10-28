@@ -1,12 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { useAccount } from 'wagmi';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { News } from '@/types';
+import FloatingIndicator from '@/components/shared/FloatingIndicator';
+import { useTransactionFeedback } from '@/lib/hooks/useTransactionFeedback';
+import { newsService } from '@/lib/services';
 
 interface ResolveNewsModalProps {
   news: News;
@@ -15,28 +19,69 @@ interface ResolveNewsModalProps {
 }
 
 export default function ResolveNewsModal({ news, onClose, onResolve }: ResolveNewsModalProps) {
+  const { address, isConnected } = useAccount();
+  const { feedback, executeTransaction, showError } = useTransactionFeedback();
+
   const [selectedOutcome, setSelectedOutcome] = useState<'YES' | 'NO' | null>(null);
   const [resolutionSource, setResolutionSource] = useState('');
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
+    if (!isConnected || !address) {
+      showError('Please connect your wallet first');
+      return;
+    }
+
     if (!selectedOutcome || !resolutionSource) {
-      alert('Please select an outcome and provide a data source');
+      showError('Please select an outcome and provide a data source');
       return;
     }
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      onResolve(selectedOutcome, resolutionSource, resolutionNotes);
+    try {
+      const result = await executeTransaction(
+        async () => {
+          const resolveResult = await newsService.resolve(
+            news.id,
+            selectedOutcome,
+            resolutionSource,
+            resolutionNotes
+          );
+
+          return {
+            success: resolveResult.success,
+            hash: resolveResult.txHash,
+            error: resolveResult.error
+          };
+        },
+        'Resolving NEWS on blockchain...',
+        `NEWS resolved as ${selectedOutcome}! Rewards auto-distributed.`,
+        selectedOutcome === 'YES' ? 'primary' : 'destructive'
+      );
+
+      if (result !== null) {
+        // Call parent callback
+        onResolve(selectedOutcome, resolutionSource, resolutionNotes);
+
+        // Close modal after short delay
+        setTimeout(() => {
+          onClose();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Failed to resolve news:', error);
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      {/* Floating Indicator */}
+      <FloatingIndicator {...feedback} />
+
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-border/50 bg-background shadow-2xl">
         <CardContent className="p-6">
           {/* Header */}
@@ -164,7 +209,7 @@ export default function ResolveNewsModal({ news, onClose, onResolve }: ResolveNe
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!selectedOutcome || !resolutionSource || isSubmitting}
+              disabled={!selectedOutcome || !resolutionSource || isSubmitting || !isConnected}
               className={`flex-1 ${
                 selectedOutcome === 'YES'
                   ? 'bg-green-500 hover:bg-green-600'
@@ -173,7 +218,11 @@ export default function ResolveNewsModal({ news, onClose, onResolve }: ResolveNe
                   : ''
               }`}
             >
-              {isSubmitting ? 'Resolving...' : `Resolve as ${selectedOutcome || '...'}`}
+              {!isConnected
+                ? 'Connect Wallet First'
+                : isSubmitting
+                ? 'Resolving...'
+                : `Resolve as ${selectedOutcome || '...'}`}
             </Button>
           </div>
         </CardContent>

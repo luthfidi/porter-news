@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import Header from "@/components/layout/Header";
+import MobileHeader from "@/components/layout/MobileHeader";
+import MobileNav from "@/components/layout/MobileNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Porter - Forecast Porter",
+    title: "Forter - Forecast Porter",
     description:
       "Stake on credibility, not luck. Build on-chain reputation through verifiable analysis and earn from accurate insights.",
     icons: {
@@ -56,9 +58,22 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <div className="min-h-screen bg-background">
+          <div className="min-h-screen">
+            {/* Desktop Header */}
             <Header />
-            <main>{children}</main>
+            
+            {/* Mobile Header */}
+            <div className="md:hidden">
+              <MobileHeader />
+            </div>
+            
+            {/* Main Content */}
+            <main className="pb-24 md:pb-0">{children}</main>
+            
+            {/* Mobile Navigation */}
+            <div className="md:hidden">
+              <MobileNav />
+            </div>
           </div>
         </Providers>
       </body>

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+// Import Forter contract to use its enums
+// Note: Interface cannot redeclare enums from implementation
 interface IForter {
     // Core functions
     function createNews(
@@ -17,7 +19,7 @@ interface IForter {
         string[] memory _evidenceLinks,
         string memory _imageUrl,
         string memory _imageCaption,
-        bool _position,
+        uint8 _position, // Note: Interface uses uint8, implementation uses Position enum
         uint256 _creatorStake
     ) external;
 
@@ -25,7 +27,14 @@ interface IForter {
 
     function resolveNews(
         uint256 newsId,
-        bool outcome,
+        uint8 outcome,
+        string memory resolutionSource,
+        string memory resolutionNotes
+    ) external;
+
+    function emergencyResolve(
+        uint256 newsId,
+        uint8 outcome,
         string memory resolutionSource,
         string memory resolutionNotes
     ) external;

@@ -5,10 +5,10 @@ import { OnchainKitProvider } from '@coinbase/onchainkit';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { defineChain } from 'viem';
 
-// Define Monad Devnet chain (must match wagmi.ts definition)
+// Define Monad Testnet chain (must match wagmi.ts definition)
 const monad = defineChain({
-  id: 41455,
-  name: 'Monad Devnet',
+  id: 41454,
+  name: 'Monad Testnet',
   nativeCurrency: {
     decimals: 18,
     name: 'MON',

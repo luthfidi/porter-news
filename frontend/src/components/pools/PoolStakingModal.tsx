@@ -19,21 +19,49 @@ export default function PoolStakingModal({ pool, onClose, onSuccess }: PoolStaki
   const [selectedPosition, setSelectedPosition] = useState<'agree' | 'disagree'>('agree');
   const [amount, setAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleStake = async () => {
+    setError(null); // Clear previous errors
     const stakeAmount = parseFloat(amount);
-    if (stakeAmount < 1) return;
-
-    setIsSubmitting(true);
-    const result = await stakeOnPool(pool.id, selectedPosition, stakeAmount);
-
-    if (result) {
-      // Success!
-      onSuccess?.();
-      onClose();
+    if (stakeAmount < 10) {
+      console.warn('[PoolStakingModal] Stake amount below minimum $10:', stakeAmount);
+      setError('Minimum stake amount is $10 USDC. Please enter a larger amount.');
+      return; // $10 minimum stake
     }
 
-    setIsSubmitting(false);
+    setIsSubmitting(true);
+    try {
+      const result = await stakeOnPool(pool.id, selectedPosition, stakeAmount);
+
+      if (result) {
+        // Success!
+        onSuccess?.();
+        onClose();
+      } else {
+        // FIXED: Show user-friendly error message for failed stake
+        setError('Staking failed. Please check your wallet balance and try again.');
+      }
+    } catch (error) {
+      // FIXED: Comprehensive error handling
+      console.error('[PoolStakingModal] Staking error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+
+      // Provide user-friendly error messages
+      if (errorMessage.includes('user rejected') || errorMessage.includes('User denied')) {
+        setError('Transaction was cancelled. No changes were made.');
+      } else if (errorMessage.includes('insufficient funds')) {
+        setError('Insufficient funds for gas fees. Please add more ETH to your wallet.');
+      } else if (errorMessage.includes('Cannot change position')) {
+        setError('You already staked on this pool with a different position. You can only add more to the same position.');
+      } else if (errorMessage.includes('already resolved')) {
+        setError('This news has already been resolved. Staking is no longer available.');
+      } else {
+        setError(`Staking failed: ${errorMessage}`);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const stakeAmount = parseFloat(amount) || 0;
@@ -154,11 +182,12 @@ export default function PoolStakingModal({ pool, onClose, onSuccess }: PoolStaki
               placeholder="10"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              onWheel={(e) => e.currentTarget.blur()}
               min="1"
               className="bg-background border-border text-lg"
             />
             <div className="text-xs text-muted-foreground mt-1">
-              Minimum $1 USDC
+              Minimum $10 USDC
             </div>
           </div>
 
@@ -241,6 +270,16 @@ export default function PoolStakingModal({ pool, onClose, onSuccess }: PoolStaki
               {isSubmitting || loading ? 'Processing...' : `Confirm Stake`}
             </Button>
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600">
+              <div className="flex items-start gap-2">
+                <span className="text-red-500">⚠️</span>
+                <div className="text-sm">{error}</div>
+              </div>
+            </div>
+          )}
 
           {/* Warning & Info */}
           <div className="mt-4 space-y-2">

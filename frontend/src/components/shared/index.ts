@@ -40,3 +40,6 @@ export {
   DetailPageSkeleton,
   PageSkeleton,
 } from './LoadingSkeleton';
+
+// Floating Indicator (Transaction Feedback)
+export { default as FloatingIndicator } from './FloatingIndicator';

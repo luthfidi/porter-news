@@ -1,22 +1,46 @@
-import { NextResponse } from "next/server";
-import { minikitConfig } from "../../../../minikit.config";
+function withValidProperties(
+  properties: Record<string, undefined | string | string[]>,
+) {
+  return Object.fromEntries(
+    Object.entries(properties).filter(([key, value]) => {
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+      return !!value;
+    }),
+  );
+}
 
 export async function GET() {
-  return NextResponse.json({
-    frame: {
-      name: minikitConfig.miniapp.name,
-      version: minikitConfig.miniapp.version,
-      iconUrl: minikitConfig.miniapp.iconUrl,
-      homeUrl: minikitConfig.miniapp.homeUrl,
-      imageUrl: minikitConfig.miniapp.heroImageUrl,
-      splashImageUrl: minikitConfig.miniapp.splashImageUrl,
-      splashBackgroundColor: minikitConfig.miniapp.splashBackgroundColor,
-      webhookUrl: minikitConfig.miniapp.webhookUrl,
-      subtitle: minikitConfig.miniapp.subtitle,
-      description: minikitConfig.miniapp.description,
-      primaryCategory: minikitConfig.miniapp.primaryCategory,
+  const URL = process.env.NEXT_PUBLIC_BASE_URL;
+
+  return Response.json({
+    accountAssociation: {
+      header: process.env.FARCASTER_HEADER,
+      payload: process.env.FARCASTER_PAYLOAD,
+      signature: process.env.FARCASTER_SIGNATURE,
     },
-    accountAssociation: minikitConfig.accountAssociation,
-    baseBuilder: minikitConfig.baseBuilder,
+    frame: withValidProperties({
+      version: "1",
+      name: process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME,
+      subtitle: process.env.NEXT_PUBLIC_APP_SUBTITLE,
+      description: process.env.NEXT_PUBLIC_APP_DESCRIPTION,
+      screenshotUrls: [],
+      iconUrl: process.env.NEXT_PUBLIC_APP_ICON,
+      splashImageUrl: process.env.NEXT_PUBLIC_APP_SPLASH_IMAGE,
+      splashBackgroundColor: process.env.NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR,
+      homeUrl: URL,
+      webhookUrl: `${URL}/api/webhook`,
+      primaryCategory: process.env.NEXT_PUBLIC_APP_PRIMARY_CATEGORY,
+      tags: ["productivity", "social", "fitness"],
+      heroImageUrl: process.env.NEXT_PUBLIC_APP_HERO_IMAGE,
+      tagline: process.env.NEXT_PUBLIC_APP_TAGLINE,
+      ogTitle: process.env.NEXT_PUBLIC_APP_OG_TITLE,
+      ogDescription: process.env.NEXT_PUBLIC_APP_OG_DESCRIPTION,
+      ogImageUrl: process.env.NEXT_PUBLIC_APP_OG_IMAGE,
+    }),
+    baseBuilder: {
+      allowedAddresses: ["0x4030986A078f97fbdC74d43dAFeb646D6caBb8A9"],
+    },
   });
 }

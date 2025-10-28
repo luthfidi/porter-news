@@ -1,10 +1,13 @@
 import { Pool } from '@/types';
 
 /**
- * MOCK POOLS DATA
+ * MOCK POOLS DATA - UPDATED FOR OCT 2025
  *
- * This file contains mock data for POOL entities (analysis with independent stake pools).
- * When integrating with smart contracts, replace this with contract calls.
+ * This file contains mock data for POOL entities with 20/80 reward split logic:
+ * - Creator gets 20% of remaining pool (after 2% fee)
+ * - Winning stakers get 80% of remaining pool
+ * - Creator excluded from staker pool calculations
+ * - Rewards auto-distributed on resolution
  *
  * Contract Integration Point:
  * - Replace with: await readContract({ address: poolFactory, functionName: 'getPoolsByNews', args: [newsId] })
@@ -12,283 +15,231 @@ import { Pool } from '@/types';
  */
 
 export const MOCK_POOLS: Pool[] = [
-  // Pools for NEWS 1: "ETH will reach $5000"
+  // Pools for NEWS 1: "BTC will reach $150,000 before end of 2025"
   {
     id: 'pool-1',
     newsId: '1',
     creatorAddress: '0x1234...5678',
     position: 'YES',
-    reasoning: 'ETF approval will drive massive institutional inflows. Historical data shows that after Bitcoin ETF approval, price surged 40% within 3 months. Ethereum has stronger fundamentals with its DeFi ecosystem and staking yields. Technical analysis shows bull flag pattern with strong support at $3500.',
+    reasoning: 'Bitcoin institutional adoption accelerating with multiple nation-states adding BTC to reserves. MicroStrategy continues aggressive accumulation strategy. ETF inflows remain strong at $2B+ monthly. Post-halving supply shock combined with increasing demand creates perfect storm for $150K target.',
     evidence: [
-      'https://example.com/etf-approval-data',
-      'https://example.com/institutional-flows',
-      'https://example.com/eth-technical-analysis'
+      'https://example.com/institutional-btc-adoption',
+      'https://example.com/nation-state-reserves',
+      'https://example.com/etf-flow-data'
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800',
-    imageCaption: 'ETH Bull Flag Pattern with Strong Support',
-    creatorStake: 100,
-    agreeStakes: 900,
-    disagreeStakes: 200,
-    totalStaked: 1200,
+    imageUrl: 'https://images.unsplash.com/photo-1605792657660-596af9009e82?w=800',
+    imageCaption: 'Bitcoin Institutional Adoption Curve',
+    creatorStake: 500,
+    agreeStakes: 500,    // FIXED: Creator stake in agreeStakes for YES pool
+    disagreeStakes: 3200,
+    totalStaked: 3700,  // FIXED: 500 (creator) + 3200 (disagree) = 3700
     status: 'active',
     outcome: null,
-    createdAt: new Date('2024-10-02'),
-    farcasterCastHash: 'cast-eth-yes-1'
+    createdAt: new Date('2025-10-16'),
+    farcasterCastHash: 'cast-btc-150k-yes-1'
   },
   {
     id: 'pool-2',
     newsId: '1',
     creatorAddress: '0xabcd...efgh',
     position: 'NO',
-    reasoning: 'Regulation remains very unclear in many jurisdictions. SEC is still aggressive towards crypto projects. Macro conditions with high interest rates reduce risk appetite. Historical resistance at $4800 is very strong with 3x rejections already. Market remains bearish with low volume.',
+    reasoning: '$150K is extremely optimistic in current macro environment. Federal Reserve still hawkish on inflation. Global economic uncertainty with potential recession in 2026. Historical cycles suggest post-halving peaks take 12-18 months. Technical resistance at $120K level very strong.',
     evidence: [
-      'https://example.com/regulatory-concerns',
-      'https://example.com/macro-headwinds',
-      'https://example.com/technical-resistance'
+      'https://example.com/fed-policy-outlook',
+      'https://example.com/recession-indicators',
+      'https://example.com/btc-technical-resistance'
     ],
     imageUrl: 'https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=800',
-    imageCaption: 'ETH Technical Resistance Levels',
-    creatorStake: 50,
-    agreeStakes: 500,
-    disagreeStakes: 800,
-    totalStaked: 1350,
+    imageCaption: 'BTC Technical Resistance Analysis',
+    creatorStake: 300,
+    agreeStakes: 300,    // FIXED: Creator stake in agreeStakes for YES pool
+    disagreeStakes: 8900,
+    totalStaked: 9200,  // FIXED: 300 (creator) + 8900 (disagree) = 9200
     status: 'active',
     outcome: null,
-    createdAt: new Date('2024-10-03')
-  },
-  {
-    id: 'pool-3',
-    newsId: '1',
-    creatorAddress: '0x9999...1111',
-    position: 'YES',
-    reasoning: 'Layer 2 scaling solutions like Arbitrum and Optimism have significantly reduced gas fees. This is driving rapid DeFi adoption growth. Real World Assets (RWA) tokenization trend will drive institutional demand. Ethereum merge is proven and staking yields are attractive for institutions.',
-    evidence: [
-      'https://example.com/l2-adoption',
-      'https://example.com/rwa-tokenization'
-    ],
-    creatorStake: 150,
-    agreeStakes: 1200,
-    disagreeStakes: 300,
-    totalStaked: 1650,
-    status: 'active',
-    outcome: null,
-    createdAt: new Date('2024-10-04')
+    createdAt: new Date('2025-10-17')
   },
 
-  // Pools for NEWS 2: "BTC will hit $100k"
+  // Pools for NEWS 2: "Solana will flip Ethereum by market cap in 2026"
+  {
+    id: 'pool-3',
+    newsId: '2',
+    creatorAddress: '0x2222...3333',
+    position: 'YES',
+    reasoning: 'Solana ecosystem exploding with massive DeFi migration due to sub-penny fees. Jupiter DEX volume rivaling Uniswap. Mobile-first strategy with Saga phones driving consumer adoption. Institutional interest growing with Solana ETF filings. Developer activity at all-time highs.',
+    evidence: [
+      'https://example.com/solana-dex-volume',
+      'https://example.com/saga-adoption',
+      'https://example.com/developer-metrics'
+    ],
+    imageUrl: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800',
+    imageCaption: 'Solana Ecosystem Growth Analysis',
+    creatorStake: 800,
+    agreeStakes: 800,    // FIXED: Creator stake in agreeStakes for YES pool
+    disagreeStakes: 6200,
+    totalStaked: 7000,  // FIXED: 800 (creator) + 6200 (disagree) = 7000
+    status: 'active',
+    outcome: null,
+    createdAt: new Date('2025-10-19'),
+    farcasterCastHash: 'cast-sol-flip-yes-1'
+  },
   {
     id: 'pool-4',
     newsId: '2',
-    creatorAddress: '0x2222...3333',
-    position: 'YES',
-    reasoning: 'Halving cycle historically bullish. Spot ETF inflows breaking records - already $50B+ in 6 months. MicroStrategy and institutional buyers continue to accumulate. Stock-to-flow model predicts $100k+ post-halving. On-chain metrics show strong accumulation by whales.',
-    evidence: [
-      'https://example.com/halving-cycle-data',
-      'https://example.com/etf-inflows-record',
-      'https://example.com/on-chain-accumulation'
-    ],
-    imageUrl: 'https://images.unsplash.com/photo-1605792657660-596af9009e82?w=800',
-    imageCaption: 'BTC Halving Cycle Analysis',
-    creatorStake: 200,
-    agreeStakes: 2000,
-    disagreeStakes: 500,
-    totalStaked: 2700,
-    status: 'active',
-    outcome: null,
-    createdAt: new Date('2024-10-06'),
-    farcasterCastHash: 'cast-btc-yes-1'
-  },
-  {
-    id: 'pool-5',
-    newsId: '2',
     creatorAddress: '0x4444...5555',
     position: 'NO',
-    reasoning: 'Macro environment still challenging. Fed has not pivoted yet, interest rates remain high. Global liquidity conditions are tight. China economic slowdown impacts risk assets. Historical post-halving rallies take 12-18 months, March 2025 is too early. Technical indicators show overbought on weekly timeframe.',
+    reasoning: 'Ethereum still has significant advantages: largest developer ecosystem, most institutional DeFi protocols, established network effects. ETH 2.0 scaling solutions maturing rapidly. Solana still faces occasional network congestion. Market cap flip would require 10x SOL price increase - unrealistic by 2026.',
     evidence: [
-      'https://example.com/fed-policy-outlook',
-      'https://example.com/global-liquidity'
+      'https://example.com/eth-developer-metrics',
+      'https://example.com/defi-protocol-distribution'
     ],
-    creatorStake: 100,
-    agreeStakes: 800,
-    disagreeStakes: 1500,
-    totalStaked: 2400,
+    creatorStake: 600,
+    agreeStakes: 12800,
+    disagreeStakes: 22000,
+    totalStaked: 35400,
     status: 'active',
     outcome: null,
-    createdAt: new Date('2024-10-07')
+    createdAt: new Date('2025-10-20')
   },
 
-  // Pools for NEWS 3: "Fed rate cut Q1 2025"
+  // Pools for NEWS 3: "OpenAI will achieve AGI before 2027"
   {
-    id: 'pool-6',
+    id: 'pool-5',
     newsId: '3',
     creatorAddress: '0x6666...7777',
     position: 'YES',
-    reasoning: 'Inflation data trending down towards 2% target. Employment data showing weakness - unemployment creeping up. Powell has signaled "higher for longer" is ending. Market pricing in 75% chance of Q1 cut. Historical precedent: Fed cuts when they see economic softening.',
+    reasoning: 'GPT-5 showing breakthrough reasoning capabilities approaching human-level performance. OpenAI recently achieved AGI internally according to leaks. Scaling laws suggest next model iteration will cross AGI threshold. Competition driving faster development cycles.',
     evidence: [
-      'https://example.com/inflation-trends',
-      'https://example.com/employment-weakness',
-      'https://example.com/fed-signals'
+      'https://example.com/gpt5-benchmarks',
+      'https://example.com/agi-scaling-laws',
+      'https://example.com/openai-leaks'
     ],
-    creatorStake: 75,
-    agreeStakes: 600,
-    disagreeStakes: 400,
-    totalStaked: 1075,
+    creatorStake: 1200,
+    agreeStakes: 1200,   // FIXED: Creator stake in agreeStakes for YES pool
+    disagreeStakes: 18000,
+    totalStaked: 19200, // FIXED: 1200 (creator) + 18000 (disagree) = 19200
     status: 'active',
     outcome: null,
-    createdAt: new Date('2024-10-09')
+    createdAt: new Date('2025-10-21')
   },
   {
-    id: 'pool-7',
+    id: 'pool-6',
     newsId: '3',
     creatorAddress: '0x8888...9999',
     position: 'NO',
-    reasoning: 'Core inflation remains sticky above 3%. Labor market remains resilient. Fed does not want to cut too early and risk inflation resurgence. Political pressure pre-election makes them cautious. CME Fed Watch still shows uncertainty. Q2 2025 more likely for first cut.',
+    reasoning: 'AGI is still years away despite recent advances. Current AI models lack true understanding and reasoning. Safety concerns will slow development significantly. Regulatory oversight increasing globally. True AGI requires breakthrough innovations not just scaling current architectures.',
     evidence: [
-      'https://example.com/core-inflation-data',
-      'https://example.com/labor-market-strength'
+      'https://example.com/agi-limitations',
+      'https://example.com/safety-concerns',
+      'https://example.com/regulatory-oversight'
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800',
-    imageCaption: 'Fed Rate Decision Analysis',
-    creatorStake: 80,
-    agreeStakes: 700,
-    disagreeStakes: 600,
-    totalStaked: 1380,
+    imageUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800',
+    imageCaption: 'AGI Development Timeline Analysis',
+    creatorStake: 800,
+    agreeStakes: 15000,
+    disagreeStakes: 29200,
+    totalStaked: 45000,
     status: 'active',
     outcome: null,
-    createdAt: new Date('2024-10-10')
+    createdAt: new Date('2025-10-21')
   },
 
-  // Pools for NEWS 4: "GPT-5 before June 2025"
+  // Pools for NEWS 4: "US will launch Central Bank Digital Currency (CBDC) in 2026"
   {
-    id: 'pool-8',
+    id: 'pool-7',
     newsId: '4',
     creatorAddress: '0xaaaa...bbbb',
     position: 'YES',
-    reasoning: 'Sam Altman hints at "amazing models" coming soon. OpenAI just raised $6.6B for compute infrastructure. Competition from Google Gemini and Anthropic Claude pushing faster iteration. Training timeline suggests Q1-Q2 2025 window. Regulatory approvals mostly in place.',
+    reasoning: 'Fed Chair Powell increasingly positive on digital dollar. China CBDC success creating competitive pressure. EU digital euro moving forward rapidly. Congressional bipartisan support growing. Pilot programs expanding nationwide.',
     evidence: [
-      'https://example.com/sam-altman-hints',
-      'https://example.com/openai-funding',
-      'https://example.com/training-timeline'
+      'https://example.com/fed-cbdc-pilots',
+      'https://example.com/congress-support',
+      'https://example.com/global-cbdc-trends'
     ],
-    creatorStake: 150,
-    agreeStakes: 1800,
-    disagreeStakes: 700,
-    totalStaked: 2650,
+    creatorStake: 400,
+    agreeStakes: 8000,
+    disagreeStakes: 5600,
+    totalStaked: 14000,
     status: 'active',
     outcome: null,
-    createdAt: new Date('2024-10-11'),
-    farcasterCastHash: 'cast-gpt5-yes-1'
-  },
-  {
-    id: 'pool-9',
-    newsId: '4',
-    creatorAddress: '0xcccc...dddd',
-    position: 'NO',
-    reasoning: 'Training GPT-5 requires massive compute - 12-18 months minimum. Safety testing and alignment work takes additional months. Regulatory scrutiny increasing globally. OpenAI historically delays releases - GPT-4 took longer than expected. June 2025 too aggressive, late 2025 more realistic.',
-    evidence: [
-      'https://example.com/training-requirements',
-      'https://example.com/safety-protocols'
-    ],
-    creatorStake: 120,
-    agreeStakes: 1000,
-    disagreeStakes: 1500,
-    totalStaked: 2620,
-    status: 'active',
-    outcome: null,
-    createdAt: new Date('2024-10-12')
+    createdAt: new Date('2025-10-22')
   },
 
   // ============================================
-  // RESOLVED POOLS (for News 7: SOL $200 - Outcome: YES)
+  // RESOLVED POOLS (for testing)
   // ============================================
+  
+  // Pools for NEWS 7: "ETH will reach $4,500 before October 2025" - RESOLVED YES
   {
-    id: 'pool-10',
+    id: 'pool-8',
     newsId: '7',
     creatorAddress: '0x1234...5678',
     position: 'YES',
-    reasoning: 'Solana ecosystem growth is explosive. Memecoin mania driving massive trading volume. Jito airdrop and Jupiter launch creating positive sentiment. Network uptime stable. Major DeFi protocols migrating to Solana.',
+    reasoning: 'Ethereum ETF approval creating sustained buying pressure. Layer 2 adoption accelerating with Arbitrum and Optimism seeing record TVL. DeFi protocols showing strong growth. Technical analysis supports breakout above $4,000 resistance.',
     evidence: [
-      'https://example.com/solana-activity',
-      'https://example.com/dex-volume'
+      'https://example.com/eth-etf-inflows',
+      'https://example.com/l2-tvl-growth',
+      'https://example.com/defi-metrics'
     ],
-    creatorStake: 150,
-    agreeStakes: 1200,
-    disagreeStakes: 400,
-    totalStaked: 1750,
+    creatorStake: 400,
+    agreeStakes: 12000,
+    disagreeStakes: 3200,
+    totalStaked: 15600,
     status: 'resolved',
     outcome: 'creator_correct',
-    createdAt: new Date('2024-09-16')
+    resolvedAt: new Date('2025-09-28'),
+    createdAt: new Date('2025-07-02'),
+    autoDistributed: true,
+    rewardTxHash: '0xabc123...789xyz',
+    creatorReward: 3058, // 20% of remaining pool (15600 - 312 fee = 15288, ×20% = 3058)
+    stakerRewardsDistributed: 12230 // 80% of remaining pool
   },
   {
-    id: 'pool-11',
+    id: 'pool-9',
     newsId: '7',
     creatorAddress: '0xabcd...efgh',
     position: 'NO',
-    reasoning: 'FTX overhang still present. Technical resistance at $180. Memecoin hype unsustainable. Network still has occasional congestion issues.',
+    reasoning: 'Macro environment still challenging with high interest rates. Strong resistance at $4,200 level historically difficult to break. Market cycle suggests consolidation phase through Q3.',
     evidence: [
-      'https://example.com/ftx-liquidations'
+      'https://example.com/macro-analysis',
+      'https://example.com/eth-resistance-levels'
     ],
-    creatorStake: 100,
-    agreeStakes: 800,
-    disagreeStakes: 900,
-    totalStaked: 1800,
+    creatorStake: 300,
+    agreeStakes: 5000,
+    disagreeStakes: 13900,
+    totalStaked: 19200,
     status: 'resolved',
     outcome: 'creator_wrong',
-    createdAt: new Date('2024-09-17')
-  },
-  {
-    id: 'pool-12',
-    newsId: '7',
-    creatorAddress: '0x9999...1111',
-    position: 'YES',
-    reasoning: 'On-chain metrics bullish. Whale accumulation visible. Technical breakout from $150 confirmed. Momentum strong with Jupiter airdrop catalyst.',
-    evidence: [
-      'https://example.com/sol-on-chain'
-    ],
-    creatorStake: 120,
-    agreeStakes: 900,
-    disagreeStakes: 230,
-    totalStaked: 1250,
-    status: 'resolved',
-    outcome: 'creator_correct',
-    createdAt: new Date('2024-09-18')
+    resolvedAt: new Date('2025-09-28'),
+    createdAt: new Date('2025-07-05'),
+    autoDistributed: true,
+    rewardTxHash: '0xdef456...123abc',
+    creatorReward: 0, // Creator gets nothing when wrong
+    stakerRewardsDistributed: 18816 // 98% of pool (19200 - 384 fee = 18816) goes to disagree stakers
   },
 
-  // ============================================
-  // RESOLVED POOLS (for News 8: Apple AI - Outcome: NO)
-  // ============================================
+  // Pools for NEWS 9: "Base will become top 3 blockchain by TVL in 2025" - RESOLVED YES
   {
-    id: 'pool-13',
-    newsId: '8',
-    creatorAddress: '0x2222...3333',
+    id: 'pool-10',
+    newsId: '9',
+    creatorAddress: '0x9999...1111',
     position: 'YES',
-    reasoning: 'WWDC announcements promising. Beta features already available. Apple typically ships on time. Competitive pressure from Google and Microsoft.',
+    reasoning: 'Coinbase integration driving massive user onboarding. Major DeFi protocols deploying on Base. Low fees attracting retail users. Institutional adoption through Coinbase Prime.',
     evidence: [
-      'https://example.com/apple-wwdc'
+      'https://example.com/base-growth',
+      'https://example.com/coinbase-integration'
     ],
-    creatorStake: 100,
-    agreeStakes: 700,
-    disagreeStakes: 900,
-    totalStaked: 1700,
-    status: 'resolved',
-    outcome: 'creator_wrong',
-    createdAt: new Date('2024-08-05')
-  },
-  {
-    id: 'pool-14',
-    newsId: '8',
-    creatorAddress: '0x4444...5555',
-    position: 'NO',
-    reasoning: 'Apple historically conservative with AI rollout. Privacy concerns require extensive testing. Beta feedback showing delays. October too optimistic.',
-    evidence: [
-      'https://example.com/apple-delays'
-    ],
-    creatorStake: 80,
-    agreeStakes: 600,
-    disagreeStakes: 920,
-    totalStaked: 1500,
+    creatorStake: 800,
+    agreeStakes: 18000,
+    disagreeStakes: 8400,
+    totalStaked: 27200,
     status: 'resolved',
     outcome: 'creator_correct',
-    createdAt: new Date('2024-08-06')
+    resolvedAt: new Date('2025-09-28'),
+    createdAt: new Date('2025-03-16'),
+    autoDistributed: true,
+    rewardTxHash: '0x123abc...456def',
+    creatorReward: 5320, // 20% of remaining pool
+    stakerRewardsDistributed: 21280 // 80% of remaining pool
   }
 ];

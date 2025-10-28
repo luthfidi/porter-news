@@ -17,14 +17,23 @@ contract ReputationNFT is ERC721, Ownable {
 
     // User reputation data
     struct UserReputation {
-        uint256 score;
+        uint256 reputationPoints; // Point-based score with stake weight
         uint256 lastUpdated;
         uint256 totalPredictions;
         uint256 correctPredictions;
+        uint256 totalStakeInPools; // Track total stake across all pools
+    }
+
+    // Pool records for stake weight calculation
+    struct PoolRecord {
+        bool isCorrect;
+        uint256 poolTotalStake;
+        uint256 timestamp;
     }
 
     // Mappings
     mapping(address => UserReputation) public userReputations;
+    mapping(address => PoolRecord[]) public userPoolHistory; // Track pool history for each user
     mapping(uint256 => ReputationTier) public reputationTiers;
     mapping(address => uint256) public userToTokenId;
     mapping(uint256 => address) public tokenIdToUser;
@@ -36,9 +45,9 @@ contract ReputationNFT is ERC721, Ownable {
     event PredictionRecorded(address indexed user, bool correct);
 
     constructor() ERC721("ForterReputation", "FRTREP") Ownable(msg.sender) {
-        // Initialize with default tiers
+        // Initialize with point-based tiers (with stake weight multipliers)
         _addTier(0, "Novice", 0, "ipfs://QmNovice/metadata.json");
-        _addTier(1, "Analyst", 100, "ipfs://QmAnalyst/metadata.json");
+        _addTier(1, "Analyst", 200, "ipfs://QmAnalyst/metadata.json");
         _addTier(2, "Expert", 500, "ipfs://QmExpert/metadata.json");
         _addTier(3, "Master", 1000, "ipfs://QmMaster/metadata.json");
         _addTier(4, "Legend", 5000, "ipfs://QmLegend/metadata.json");
@@ -76,10 +85,11 @@ contract ReputationNFT is ERC721, Ownable {
         reputationTiers[tierId].tokenURI = newURI;
     }
 
-    // Increase user reputation (called by Forter contract)
+    // DEPRECATED: Use recordPoolWithStake instead
+    // Kept for backwards compatibility
     function increaseReputation(address user, uint256 points) external onlyOwner {
         UserReputation storage rep = userReputations[user];
-        rep.score += points;
+        rep.reputationPoints += points;
         rep.lastUpdated = block.timestamp;
 
         // Mint NFT if first time
@@ -87,22 +97,78 @@ contract ReputationNFT is ERC721, Ownable {
             _mintNFT(user);
         }
 
-        emit ReputationIncreased(user, points, rep.score);
-        emit ReputationUpdated(user, rep.score, userToTokenId[user]);
+        emit ReputationIncreased(user, points, rep.reputationPoints);
+        emit ReputationUpdated(user, rep.reputationPoints, userToTokenId[user]);
     }
 
-    // Record a prediction (called by Forter contract on resolution)
-    function recordPrediction(address user, bool correct) external onlyOwner {
+    // Record pool result with stake weight (called by Forter contract on resolution)
+    function recordPoolWithStake(
+        address user,
+        bool correct,
+        uint256 poolTotalStake
+    ) external onlyOwner {
         UserReputation storage rep = userReputations[user];
-        rep.totalPredictions++;
 
+        // Record prediction
+        rep.totalPredictions++;
         if (correct) {
             rep.correctPredictions++;
         }
 
+        // Add to pool history
+        userPoolHistory[user].push(PoolRecord({
+            isCorrect: correct,
+            poolTotalStake: poolTotalStake,
+            timestamp: block.timestamp
+        }));
+
+        // Calculate and update reputation points
+        _updateReputationPoints(user);
+
         rep.lastUpdated = block.timestamp;
 
+        // Mint NFT if first pool
+        if (userToTokenId[user] == 0) {
+            _mintNFT(user);
+        }
+
         emit PredictionRecorded(user, correct);
+    }
+
+    // Internal function to calculate reputation points with stake weight
+    function _updateReputationPoints(address user) internal {
+        UserReputation storage rep = userReputations[user];
+        PoolRecord[] memory pools = userPoolHistory[user];
+
+        int256 totalPoints = 0;
+
+        for (uint256 i = 0; i < pools.length; i++) {
+            // Base points: +100 if correct, -30 if wrong
+            int256 basePoints = pools[i].isCorrect ? int256(100) : int256(-30);
+
+            // Stake multiplier (1.0x to 3.0x based on pool total stake)
+            uint256 stakeMultiplier = _getStakeMultiplier(pools[i].poolTotalStake);
+
+            // Apply multiplier (stakeMultiplier is in basis points: 100 = 1.0x)
+            // forge-lint: disable-next-line(unsafe-typecast)
+            totalPoints += (basePoints * int256(stakeMultiplier)) / 100;
+        }
+
+        // Prevent negative total
+        // forge-lint: disable-next-line(unsafe-typecast)
+        rep.reputationPoints = totalPoints > 0 ? uint256(totalPoints) : 0;
+    }
+
+    // Get stake weight multiplier based on pool size
+    function _getStakeMultiplier(uint256 poolTotalStake) internal pure returns (uint256) {
+        // Assuming 6 decimals for USDC
+        uint256 stakeInUSDC = poolTotalStake / 1e6;
+
+        if (stakeInUSDC >= 5000) return 300; // 3.0x for $5000+
+        if (stakeInUSDC >= 1000) return 250; // 2.5x for $1000-$4999
+        if (stakeInUSDC >= 500) return 200;  // 2.0x for $500-$999
+        if (stakeInUSDC >= 100) return 150;  // 1.5x for $100-$499
+        return 100; // 1.0x for <$100
     }
 
     // Mint NFT to user
@@ -121,7 +187,7 @@ contract ReputationNFT is ERC721, Ownable {
         external
         view
         returns (
-            uint256 score,
+            uint256 reputationPoints,
             uint256 lastUpdated,
             uint256 totalPredictions,
             uint256 correctPredictions,
@@ -131,7 +197,7 @@ contract ReputationNFT is ERC721, Ownable {
         )
     {
         UserReputation memory rep = userReputations[user];
-        uint256 userTier = _calculateTier(rep.score);
+        uint256 userTier = _calculateTier(rep.reputationPoints, rep.totalPredictions);
         string memory name = reputationTiers[userTier].name;
 
         uint256 acc = rep.totalPredictions > 0
@@ -139,7 +205,7 @@ contract ReputationNFT is ERC721, Ownable {
             : 0;
 
         return (
-            rep.score,
+            rep.reputationPoints,
             rep.lastUpdated,
             rep.totalPredictions,
             rep.correctPredictions,
@@ -149,20 +215,32 @@ contract ReputationNFT is ERC721, Ownable {
         );
     }
 
-    // Calculate user's tier based on score
-    function _calculateTier(uint256 score) internal view returns (uint256) {
-        // Start from highest tier and work down
-        if (score >= reputationTiers[4].minScore) return 4; // Legend
-        if (score >= reputationTiers[3].minScore) return 3; // Master
-        if (score >= reputationTiers[2].minScore) return 2; // Expert
-        if (score >= reputationTiers[1].minScore) return 1; // Analyst
-        return 0; // Novice
+    // Calculate user's tier based on points and minimum pool requirements
+    function _calculateTier(uint256 points, uint256 totalPools) internal view returns (uint256) {
+        // Tier 0: Novice (no requirements)
+        if (points < reputationTiers[1].minScore || totalPools == 0) return 0;
+
+        // Tier 1: Analyst (200+ points)
+        if (points < reputationTiers[2].minScore) return 1;
+
+        // Tier 2: Expert (500+ points, min 5 pools)
+        if (points < reputationTiers[3].minScore) {
+            return totalPools >= 5 ? 2 : 1;
+        }
+
+        // Tier 3: Master (1000+ points, min 10 pools)
+        if (points < reputationTiers[4].minScore) {
+            return totalPools >= 10 ? 3 : 2;
+        }
+
+        // Tier 4: Legend (5000+ points, min 20 pools)
+        return totalPools >= 20 ? 4 : 3;
     }
 
     // Get user's current tier
     function getUserTier(address user) external view returns (uint256, string memory) {
-        uint256 score = userReputations[user].score;
-        uint256 tier = _calculateTier(score);
+        UserReputation memory rep = userReputations[user];
+        uint256 tier = _calculateTier(rep.reputationPoints, rep.totalPredictions);
         return (tier, reputationTiers[tier].name);
     }
 
@@ -171,8 +249,8 @@ contract ReputationNFT is ERC721, Ownable {
         require(_ownerOf(tokenId) != address(0), "Token does not exist");
 
         address user = tokenIdToUser[tokenId];
-        uint256 score = userReputations[user].score;
-        uint256 tier = _calculateTier(score);
+        UserReputation memory rep = userReputations[user];
+        uint256 tier = _calculateTier(rep.reputationPoints, rep.totalPredictions);
 
         return reputationTiers[tier].tokenURI;
     }

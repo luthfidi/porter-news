@@ -133,7 +133,7 @@ contract ForterTestSetup is Test {
             evidence,
             "https://example.com/image.jpg",
             "Chart showing BTC price trend",
-            true, // position: YES
+            Forter.Position.YES, // position: YES
             MIN_STAKE // creator stake
         );
         vm.stopPrank();

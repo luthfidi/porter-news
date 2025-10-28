@@ -5,25 +5,21 @@ Scripts untuk memudahkan workflow development dan deployment.
 ## 📁 Available Scripts
 
 ### 1. `generate-abis.sh`
-
 Generate ABI files dari smart contract ke frontend.
 
 **Usage:**
-
 ```bash
 # Dari folder sc/
 ./scripts/generate-abis.sh
 ```
 
 **What it does:**
-
 - Build smart contracts dengan `forge build`
 - Extract ABI dari folder `out/` ke `../frontend/src/abis/`
 - Generate ABI untuk semua contract: Forter, ReputationNFT, StakingPool, ForterGovernance, MockToken
 - Support 2 methods: `jq` (preferred) atau `node` (fallback)
 
 **Output:**
-
 ```
 ../frontend/src/abis/
   ├── Forter.json
@@ -36,16 +32,14 @@ Generate ABI files dari smart contract ke frontend.
 ---
 
 ### 2. `update-frontend.sh`
-
 Full update frontend: ABI + Contract Addresses.
 
 **Usage:**
-
 ```bash
-# Update untuk Monad (default)
+# Update untuk Base Sepolia (default)
 ./scripts/update-frontend.sh
 
-# Update untuk Monad (explicit)
+# Update untuk Base Sepolia (explicit)
 ./scripts/update-frontend.sh sepolia
 
 # Update untuk Base Mainnet
@@ -53,14 +47,12 @@ Full update frontend: ABI + Contract Addresses.
 ```
 
 **What it does:**
-
 - Generate ABIs (call `generate-abis.sh`)
 - Extract deployed contract addresses dari `broadcast/` folder
 - Auto-update `frontend/src/config/contracts.ts` dengan addresses baru
 - Remove `as const` dari ABI untuk fix TypeScript error
 
 **Requirements:**
-
 - Must have deployment broadcast file:
   - Sepolia: `broadcast/Deploy.s.sol/84532/run-latest.json`
   - Mainnet: `broadcast/Deploy.s.sol/8453/run-latest.json`
@@ -114,7 +106,6 @@ npm run dev
 ### "jq: command not found"
 
 **Option 1: Install jq (recommended)**
-
 ```bash
 # WSL/Ubuntu
 sudo apt update && sudo apt install jq
@@ -137,7 +128,6 @@ chmod +x scripts/*.sh
 Cek file JSON yang di-generate. Harus berupa array `[{...}]`, BUKAN table format.
 
 **Correct format:**
-
 ```json
 [
   {
@@ -149,7 +139,6 @@ Cek file JSON yang di-generate. Harus berupa array `[{...}]`, BUKAN table format
 ```
 
 **Wrong format:**
-
 ```
 ╭─────────╮
 | Type    |
@@ -159,7 +148,6 @@ Cek file JSON yang di-generate. Harus berupa array `[{...}]`, BUKAN table format
 ### "Cannot find deployed addresses"
 
 Pastikan kamu sudah deploy dan ada file:
-
 ```
 broadcast/Deploy.s.sol/<CHAIN_ID>/run-latest.json
 ```
@@ -219,7 +207,6 @@ npm run dev
 ### CI/CD Integration
 
 Add to `.github/workflows/deploy.yml`:
-
 ```yaml
 - name: Generate ABIs
   run: |

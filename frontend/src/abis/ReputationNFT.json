@@ -129,7 +129,7 @@
     ],
     "outputs": [
       {
-        "name": "score",
+        "name": "reputationPoints",
         "type": "uint256",
         "internalType": "uint256"
       },
@@ -298,7 +298,7 @@
   },
   {
     "type": "function",
-    "name": "recordPrediction",
+    "name": "recordPoolWithStake",
     "inputs": [
       {
         "name": "user",
@@ -309,6 +309,11 @@
         "name": "correct",
         "type": "bool",
         "internalType": "bool"
+      },
+      {
+        "name": "poolTotalStake",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [],
@@ -558,6 +563,40 @@
   },
   {
     "type": "function",
+    "name": "userPoolHistory",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "isCorrect",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "poolTotalStake",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "userReputations",
     "inputs": [
       {
@@ -568,7 +607,7 @@
     ],
     "outputs": [
       {
-        "name": "score",
+        "name": "reputationPoints",
         "type": "uint256",
         "internalType": "uint256"
       },
@@ -584,6 +623,11 @@
       },
       {
         "name": "correctPredictions",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "totalStakeInPools",
         "type": "uint256",
         "internalType": "uint256"
       }

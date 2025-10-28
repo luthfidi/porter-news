@@ -10,10 +10,10 @@ import {
 } from '@/lib/mock-data';
 import { isContractsEnabled } from '@/config/contracts';
 import type { Address } from '@/types/contracts';
-import { 
+import {
   getUserReputation,
-  handleContractError 
-} from '@/lib/contracts/utils';
+  handleContractError
+} from '@/lib/contracts';
 
 /**
  * REPUTATION SERVICE
@@ -66,45 +66,25 @@ class ReputationService {
     }
 
     try {
-      console.log('[ReputationService] Fetching reputation from contract:', address);
-      
       const reputation = await getUserReputation(address as Address);
-      
-      if (reputation) {
-        console.log('[ReputationService] Successfully fetched reputation:', {
-          address: reputation.address,
-          accuracy: reputation.accuracy,
-          tier: reputation.tier,
-          totalPools: reputation.totalPools
-        });
-      } else {
-        console.log('[ReputationService] No reputation found for address:', address);
-      }
-      
       return reputation || undefined;
-
     } catch (error) {
-      console.error('[ReputationService] Contract getByAddress failed, falling back to mock:', error);
-      
-      // Fallback to mock data on error
-      if (process.env.NODE_ENV === 'development') {
-        await new Promise(resolve => setTimeout(resolve, 300));
-        return mockGetReputationData(address);
-      }
-      
+      console.error('[ReputationService] Contract getByAddress failed:', error);
       return undefined;
     }
   }
 
   /**
-   * Get all analysts (users with reputation)
+   * Get all analysts (pool creators with statistics)
    *
-   * Contract Integration:
-   * - Option 1: Query events (ReputationUpdated)
-   * - Option 2: Off-chain indexer (The Graph)
-   * - Option 3: Contract view function getAllAnalysts() (gas-intensive)
+   * Contract Integration Strategy:
+   * - Fetches all news items and their pools from Forter contract
+   * - Aggregates pool creators and calculates statistics
+   * - Optionally enriches with ReputationNFT data if available
    *
-   * Recommended: Use The Graph to index all reputation holders
+   * Performance Notes:
+   * - Makes O(n) calls where n = number of news items
+   * - For production, consider using The Graph indexer for better performance
    */
   async getAllAnalysts(): Promise<ReputationData[]> {
     if (!isContractsEnabled()) {
@@ -113,27 +93,100 @@ class ReputationService {
     }
 
     try {
-      console.log('[ReputationService] Fetching all analysts from contract...');
-      
-      // For contract integration, we'd need to:
-      // 1. Query ReputationUpdated events to get all users with reputation
-      // 2. Or use The Graph subgraph to index reputation data
-      // 3. Or implement a contract function to iterate through NFT holders
-      
-      // For now, fall back to mock data since this requires event indexing
-      console.log('[ReputationService] All analysts require event indexing, falling back to mock');
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return mockGetAllAnalysts();
+      const { getNewsCount, getPoolsByNewsId } = await import('@/lib/contracts/Forter');
+
+      const newsCount = await getNewsCount();
+      if (newsCount === 0) {
+        return [];
+      }
+
+      // Fetch all pools across all news
+      const poolPromises = [];
+      for (let i = 1; i <= newsCount; i++) {
+        poolPromises.push(getPoolsByNewsId(i.toString()));
+      }
+
+      const allPoolsByNews = await Promise.all(poolPromises);
+
+      // Aggregate pool creators and their statistics
+      const creatorStats = new Map<string, {
+        totalPools: number;
+        correctPools: number;
+        wrongPools: number;
+        activePools: number;
+        lastActive?: Date;
+      }>();
+
+      allPoolsByNews.forEach((pools) => {
+        pools.forEach(pool => {
+          const creator = pool.creatorAddress.toLowerCase();
+
+          if (!creatorStats.has(creator)) {
+            creatorStats.set(creator, {
+              totalPools: 0,
+              correctPools: 0,
+              wrongPools: 0,
+              activePools: 0,
+            });
+          }
+
+          const stats = creatorStats.get(creator)!;
+          stats.totalPools++;
+
+          if (pool.status === 'resolved') {
+            if (pool.outcome === 'creator_correct') {
+              stats.correctPools++;
+            } else if (pool.outcome === 'creator_wrong') {
+              stats.wrongPools++;
+            }
+          } else {
+            stats.activePools++;
+          }
+
+          if (pool.createdAt) {
+            const poolDate = pool.createdAt;
+            if (!stats.lastActive || poolDate > stats.lastActive) {
+              stats.lastActive = poolDate;
+            }
+          }
+        });
+      });
+
+      // Convert to ReputationData array
+      const analysts: ReputationData[] = [];
+
+      for (const [address, stats] of creatorStats.entries()) {
+        // Try to get reputation data from contract
+        let reputationData = null;
+        try {
+          reputationData = await getUserReputation(address as Address);
+        } catch {
+          // No reputation NFT yet, use calculated data
+        }
+
+        const accuracy = stats.totalPools > 0 && (stats.correctPools + stats.wrongPools) > 0
+          ? Math.round((stats.correctPools / (stats.correctPools + stats.wrongPools)) * 100)
+          : 0;
+
+        analysts.push({
+          address,
+          accuracy,
+          totalPools: stats.totalPools,
+          correctPools: stats.correctPools,
+          wrongPools: stats.wrongPools,
+          activePools: stats.activePools,
+          tier: reputationData?.tier || calculateTier(reputationData?.reputationPoints || 0, stats.totalPools),
+          reputationPoints: reputationData?.reputationPoints || 0,
+          categoryStats: {},
+          lastActive: stats.lastActive,
+          nftTokenId: undefined,
+        });
+      }
+
+      return analysts;
 
     } catch (error) {
-      console.error('[ReputationService] Contract getAllAnalysts failed, falling back to mock:', error);
-      
-      // Fallback to mock data on error
-      if (process.env.NODE_ENV === 'development') {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        return mockGetAllAnalysts();
-      }
-      
+      console.error('[ReputationService] Failed to fetch analysts:', error);
       throw new Error(handleContractError(error));
     }
   }
@@ -246,40 +299,18 @@ class ReputationService {
   /**
    * Calculate reputation score for an address
    *
+   * UPDATED: Now uses point-based system with stake multipliers
    * Contract Integration:
-   * - Can be done on-chain (expensive) or off-chain (The Graph)
-   * - Algorithm factors:
-   *   1. Pool creation quality (quality scores)
-   *   2. Prediction accuracy (correct outcomes)
-   *   3. Total value staked
-   *   4. Community engagement
-   *
-   * Formula (example):
-   * score = (avgQualityScore * 40) + (successRate * 30) + (totalStaked * 0.01) + (poolsCreated * 5)
+   * - Points = Σ (Base Points × Stake Multiplier)
+   * - Base: +100 correct, -30 wrong
+   * - Multipliers: 1.0x (<$100), 1.5x ($100-$499), 2.0x ($500-$999), 2.5x ($1K-$4.9K), 3.0x ($5K+)
    */
   async calculateScore(address: string): Promise<number> {
-    // TODO: Add contract integration here
-    // if (USE_CONTRACTS) {
-    //   const score = await readContract({
-    //     address: contracts.reputationNFT,
-    //     abi: ReputationNFTABI,
-    //     functionName: 'calculateScore',
-    //     args: [address as `0x${string}`],
-    //   });
-    //   return Number(score);
-    // }
-
-    // Mock calculation
     const reputation = await this.getByAddress(address);
     if (!reputation) return 0;
 
-    // ReputationData only has: accuracy, totalPools, correctPools, wrongPools, activePools
-    // Simplified score calculation using available fields
-    const score =
-      (reputation.accuracy * 0.7) + // 70% weight on accuracy
-      (reputation.totalPools * 5);    // 5 points per pool created
-
-    return Math.round(score);
+    // Return reputation points from contract or mock data
+    return reputation.reputationPoints || 0;
   }
 
   /**
@@ -351,11 +382,11 @@ class ReputationService {
   }
 
   /**
-   * Get reputation tier for a score
-   * (Pure function, no contract call needed)
+   * Get reputation tier for reputation points and total pools
+   * UPDATED: Now uses point-based system with minimum pool requirements
    */
-  getTier(score: number): string {
-    return calculateTier(score);
+  getTier(reputationPoints: number, totalPools: number = 0): string {
+    return calculateTier(reputationPoints, totalPools);
   }
 
   /**

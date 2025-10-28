@@ -1,10 +1,20 @@
+import AnimatedPaths from "./AnimatedPaths";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="px-4 md:px-6 pt-24 md:pt-32 pb-16 md:pb-20">
-      <div className="max-w-4xl mx-auto text-center">
+    <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      {/* Fixed Animated Paths Background - stays in place */}
+      <div className="fixed inset-0 z-0 opacity-40 pointer-events-none">
+        <AnimatedPaths />
+      </div>
+
+      {/* Dark overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/20 z-10" />
+
+      {/* Content */}
+      <div className="relative z-20 max-w-4xl mx-auto text-center px-4 md:px-6">
         <div className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-background/80 backdrop-blur-md px-4 py-2 text-sm font-medium shadow-lg shadow-primary/10">
           <span className="h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
           <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -22,7 +32,7 @@ export default function Hero() {
         </h1>
 
         <p className="text-pretty mt-6 md:mt-8 text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-          Porter is the{" "}
+          Forter is the{" "}
           <span className="font-semibold text-foreground">
             Information Finance Protocol
           </span>
@@ -30,25 +40,20 @@ export default function Hero() {
           on-chain reputation with dynamic NFTs.
         </p>
 
-        <div className="mt-8 md:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+        {/* Mobile: Show Explore News button */}
+        <div className="mt-8 md:hidden">
           <Link href="/news">
             <Button
               size="lg"
-              className="min-w-[160px] h-12 text-base bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary hover:text-primary-foreground shadow-xl shadow-primary/25 transition-all duration-300 hover:scale-105"
+              className="min-w-[200px] bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
             >
               Explore News
             </Button>
           </Link>
-          <Button
-            size="lg"
-            variant="outline"
-            className="min-w-[160px] h-12 text-base border-border/50 hover:bg-accent/10 hover:text-foreground transition-all duration-300 hover:scale-105"
-          >
-            Read the Vision
-          </Button>
         </div>
 
-        <div className="mt-6 flex items-center justify-center gap-4 text-sm text-muted-foreground">
+        {/* Desktop: Show feature indicators */}
+        <div className="mt-6 hidden md:flex items-center justify-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
             <span>Secure, verifiable outcomes</span>

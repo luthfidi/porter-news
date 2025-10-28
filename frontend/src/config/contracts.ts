@@ -9,7 +9,7 @@ import type { Address, ContractAddresses, ContractConfig, IntegrationConfig } fr
  * Contract addresses from environment variables
  */
 export const contractAddresses: ContractAddresses = {
-  forter: process.env.NEXT_PUBLIC_PORTER_ADDRESS as Address,
+  forter: process.env.NEXT_PUBLIC_FORTER_ADDRESS as Address,
   reputationNFT: process.env.NEXT_PUBLIC_REPUTATION_NFT_ADDRESS as Address,
   stakingPool: process.env.NEXT_PUBLIC_STAKINGPOOL_ADDRESS as Address,
   governance: process.env.NEXT_PUBLIC_GOVERNANCE_ADDRESS as Address,
@@ -52,12 +52,12 @@ export const config: IntegrationConfig = {
   
   // Protocol parameters
   USDC_DECIMALS: 6,
-  MIN_STAKE_AMOUNT: 20, // $20 USDC minimum
+  MIN_STAKE_AMOUNT: 10, // $10 USDC minimum (matches contract)
   NEWS_DEPOSIT: 10, // $10 USDC deposit for creating news
   PLATFORM_FEE_PERCENT: 2, // 2% platform fee
   
   // Network configuration
-  CHAIN_ID: 41455, // Monad Devnet
+  CHAIN_ID: 10143, // Monad Testnet
   BLOCK_EXPLORER: 'https://testnet.monadexplorer.com',
   
   // Contract interaction settings
@@ -71,7 +71,7 @@ export const config: IntegrationConfig = {
 export function validateContractConfig(): { isValid: boolean; missing: string[] } {
   const missing: string[] = [];
 
-  if (!contractAddresses.forter) missing.push('NEXT_PUBLIC_PORTER_ADDRESS');
+  if (!contractAddresses.forter) missing.push('NEXT_PUBLIC_FORTER_ADDRESS');
   if (!contractAddresses.reputationNFT) missing.push('NEXT_PUBLIC_REPUTATION_NFT_ADDRESS');
   if (!contractAddresses.stakingPool) missing.push('NEXT_PUBLIC_STAKINGPOOL_ADDRESS');
   if (!contractAddresses.governance) missing.push('NEXT_PUBLIC_GOVERNANCE_ADDRESS');

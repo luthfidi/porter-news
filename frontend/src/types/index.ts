@@ -2,6 +2,8 @@
 // MODEL B: News + Pool Architecture (NEW)
 // ============================================
 
+import type { Address } from './contracts';
+
 // NEWS = User-created prediction/statement
 export interface News {
   id: string;
@@ -44,8 +46,8 @@ export interface Pool {
   creatorStake: number;         // Pool creator's initial stake
 
   // Independent stake pool
-  agreeStakes: number;          // "Setuju" total
-  disagreeStakes: number;       // "Tidak Setuju" total
+  agreeStakes: number;          // "Agree" total
+  disagreeStakes: number;       // "Disagree" total
   totalStaked: number;          // agreeStakes + disagreeStakes + creatorStake
 
   // Quality metrics (calculated dynamically)
@@ -54,6 +56,11 @@ export interface Pool {
   // Resolution
   status: 'active' | 'resolved';
   outcome: 'creator_correct' | 'creator_wrong' | null;
+  resolvedAt?: Date;           // NEW: When pool was resolved
+  autoDistributed?: boolean;   // NEW: Whether rewards were auto-distributed
+  rewardTxHash?: string;       // NEW: Transaction hash for auto-distribute
+  creatorReward?: number;      // NEW: Amount creator received (if correct)
+  stakerRewardsDistributed?: number; // NEW: Total distributed to stakers
 
   createdAt: Date;
   farcasterCastHash?: string;
@@ -64,7 +71,7 @@ export interface PoolStake {
   id: string;
   poolId: string;
   userAddress: string;
-  position: 'agree' | 'disagree'; // Setuju or Tidak Setuju
+  position: 'agree' | 'disagree'; // Agree or Disagree
   amount: number;
   createdAt: Date;
 }
@@ -85,6 +92,7 @@ export interface ReputationData {
   correctPools: number;         // Correct pools
   wrongPools: number;           // Wrong pools
   activePools: number;          // Unresolved pools
+  reputationPoints: number;     // NEW! Point-based score with stake weight (used for tier calculation)
   tier: 'Novice' | 'Analyst' | 'Expert' | 'Master' | 'Legend';
   nftTokenId?: number;
   categoryStats: Record<string, { total: number; correct: number; accuracy: number }>;
@@ -92,6 +100,7 @@ export interface ReputationData {
   bestStreak?: number;          // Best streak ever
   specialty?: string;           // Best category
   memberSince?: Date;           // First pool creation date
+  lastActive?: Date;            // Last reputation update (from contract)
 }
 
 // Legacy StakePosition type removed - using PoolStake only
@@ -161,9 +170,11 @@ export interface CreatePoolInput {
 }
 
 export interface StakeInput {
+  newsId: string;
   poolId: string;
   position: 'agree' | 'disagree';
   amount: number;
+  userAddress: Address;
 }
 
 // Resolution Input (for admin)

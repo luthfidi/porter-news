@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { getNewsQualityBadge } from '@/lib/quality-scoring';
+import { Bitcoin, TrendingUp, Laptop, Trophy, Landmark, HelpCircle, Check, X } from 'lucide-react';
 
 interface NewsCardProps {
   news: News;
@@ -36,7 +37,8 @@ function formatDistanceToNow(date: Date): string {
 export default function NewsCard({ news }: NewsCardProps) {
   const timeRemaining = formatDistanceToNow(news.endDate);
   const isEndingSoon = new Date(news.endDate).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000; // 7 days
-  const qualityBadge = getNewsQualityBadge(news.qualityScore ?? 0);
+  const qualityScore = news.qualityScore ?? 0;
+  const qualityBadge = getNewsQualityBadge(qualityScore);
 
   const getCategoryColor = (category: string) => {
     switch (category.toLowerCase()) {
@@ -56,19 +58,20 @@ export default function NewsCard({ news }: NewsCardProps) {
   };
 
   const getCategoryIcon = (category: string) => {
+    const iconClass = "w-4 h-4 text-white";
     switch (category.toLowerCase()) {
       case 'crypto':
-        return '₿';
+        return <Bitcoin className={iconClass} />;
       case 'macro':
-        return '📈';
+        return <TrendingUp className={iconClass} />;
       case 'tech':
-        return '💻';
+        return <Laptop className={iconClass} />;
       case 'sports':
-        return '⚽';
+        return <Trophy className={iconClass} />;
       case 'politics':
-        return '🏛️';
+        return <Landmark className={iconClass} />;
       default:
-        return '❓';
+        return <HelpCircle className={iconClass} />;
     }
   };
 
@@ -76,87 +79,97 @@ export default function NewsCard({ news }: NewsCardProps) {
     <Link href={`/news/${news.id}`} className="block">
       <Card className="group border border-border bg-card hover:bg-secondary transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:scale-[1.02] cursor-pointer h-full flex flex-col">
         <CardContent className="p-6 flex flex-col flex-1">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getCategoryColor(news.category)} flex items-center justify-center shadow-md`}>
-              <span className="text-white text-sm">{getCategoryIcon(news.category)}</span>
+        {/* Top Section */}
+        <div className="flex-1">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getCategoryColor(news.category)} flex items-center justify-center shadow-md flex-shrink-0`}>
+                {getCategoryIcon(news.category)}
+              </div>
+              <Badge variant="secondary" className="bg-card/50">
+                {news.category}
+              </Badge>
+              {news.qualityScore && (
+                <Badge
+                  className={`border ${qualityBadge.color} cursor-help`}
+                  title={qualityBadge.description}
+                >
+                  {qualityBadge.icon} {qualityBadge.label}
+                </Badge>
+              )}
             </div>
-            <Badge variant="secondary" className="bg-card/50">
-              {news.category}
-            </Badge>
-            {news.qualityScore && news.qualityScore >= 40 && (
-              <Badge className={`border ${qualityBadge.color}`}>
-                {qualityBadge.icon} {qualityBadge.label}
-              </Badge>
-            )}
+            <div className="flex gap-2 flex-shrink-0">
+              {news.status === 'resolved' && news.outcome && (
+                <Badge className={`flex items-center gap-1 ${
+                  news.outcome === 'YES'
+                    ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                    : 'bg-rose-100 text-rose-700 border-rose-200'
+                }`}>
+                  {news.outcome === 'YES' ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                  {news.outcome}
+                </Badge>
+              )}
+              {isEndingSoon && news.status === 'active' && (
+                <Badge variant="destructive" className="bg-rose-500/10 text-rose-600 border-rose-500/20">
+                  Ending Soon
+                </Badge>
+              )}
+            </div>
           </div>
-          <div className="flex gap-2">
-            {news.status === 'resolved' && news.outcome && (
-              <Badge className={`${
-                news.outcome === 'YES'
-                  ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                  : 'bg-rose-100 text-rose-700 border-rose-200'
-              }`}>
-                {news.outcome === 'YES' ? '✅' : '❌'} {news.outcome}
-              </Badge>
-            )}
-            {isEndingSoon && news.status === 'active' && (
-              <Badge variant="destructive" className="bg-rose-500/10 text-rose-600 border-rose-500/20">
-                Ending Soon
-              </Badge>
-            )}
-          </div>
+
+          {/* Title */}
+          <h3 className="text-lg font-bold leading-tight mb-3 group-hover:text-primary transition-colors">
+            {news.title}
+          </h3>
+
+          {/* Description */}
+          <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-2" title={news.description}>
+            {news.description}
+          </p>
         </div>
 
-        {/* Title */}
-        <h3 className="text-lg font-bold leading-tight mb-3 group-hover:text-primary transition-colors">
-          {news.title}
-        </h3>
-
-        {/* Description */}
-        <p className="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-2">
-          {news.description}
-        </p>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-center p-3 rounded-lg bg-card/50 border border-border/30">
-            <div className="text-lg font-bold text-primary">
-              {news.totalPools}
+        {/* Bottom Section - Always at bottom */}
+        <div className="mt-auto space-y-4">
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-3 rounded-lg bg-card/50 border border-border/30">
+              <div className="text-lg font-bold text-primary">
+                {news.totalPools}
+              </div>
+              <div className="text-xs text-muted-foreground">Pools</div>
             </div>
-            <div className="text-xs text-muted-foreground">Pools</div>
-          </div>
-          <div className="text-center p-3 rounded-lg bg-card/50 border border-border/30">
-            <div className="text-lg font-bold text-accent">
-              ${news.totalStaked.toLocaleString()}
+            <div className="text-center p-3 rounded-lg bg-card/50 border border-border/30">
+              <div className="text-lg font-bold text-accent">
+                ${news.totalStaked.toLocaleString()}
+              </div>
+              <div className="text-xs text-muted-foreground">Staked</div>
             </div>
-            <div className="text-xs text-muted-foreground">Staked</div>
           </div>
-        </div>
 
-        {/* Resolution Criteria */}
-        <div className="mb-4 p-3 rounded-lg bg-accent/5 border border-accent/10">
-          <div className="text-xs font-medium text-accent mb-1">Resolution Criteria:</div>
-          <div className="text-xs text-muted-foreground line-clamp-2">
-            {news.resolutionCriteria}
+          {/* Resolution Criteria */}
+          <div className="p-3 rounded-lg bg-accent/5 border border-accent/10">
+            <div className="text-xs font-medium text-accent mb-1">Resolution Criteria:</div>
+            <div className="text-xs text-muted-foreground truncate" title={news.resolutionCriteria}>
+              {news.resolutionCriteria}
+            </div>
           </div>
-        </div>
 
-        {/* Time remaining */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
-            <span>{timeRemaining === 'ended' ? 'Ended' : `Ends ${timeRemaining}`}</span>
-          </div>
-          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-            news.status === 'active'
-              ? 'bg-emerald-500/10 text-emerald-600'
-              : news.status === 'resolved'
-              ? 'bg-blue-500/10 text-blue-600'
-              : 'bg-gray-500/10 text-gray-600'
-          }`}>
-            {news.status.charAt(0).toUpperCase() + news.status.slice(1)}
+          {/* Time remaining */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
+              <span>{timeRemaining === 'ended' ? 'Ended' : `Ends ${timeRemaining}`}</span>
+            </div>
+            <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+              news.status === 'active'
+                ? 'bg-emerald-500/10 text-emerald-600'
+                : news.status === 'resolved'
+                ? 'bg-blue-500/10 text-blue-600'
+                : 'bg-gray-500/10 text-gray-600'
+            }`}>
+              {news.status.charAt(0).toUpperCase() + news.status.slice(1)}
+            </div>
           </div>
         </div>
 

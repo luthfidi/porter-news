@@ -1,32 +1,54 @@
 'use client';
 
-import * as React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { WagmiProvider } from 'wagmi';
-import dynamic from 'next/dynamic';
-
-import { config } from '@/lib/wagmi';
-import '@rainbow-me/rainbowkit/styles.css';
+import { config as wagmiConfig } from '@/lib/wagmi';
+import { FarcasterProvider } from '@/contexts/FarcasterProvider';
+import { useState, useEffect } from 'react';
 import '@coinbase/onchainkit/styles.css';
+import '@rainbow-me/rainbowkit/styles.css';
 
-const queryClient = new QueryClient();
-
-// Dynamic import wallet providers to avoid SSR issues with indexedDB
-const WalletProviders = dynamic(
-  () => import('./wallet-providers').then(mod => ({ default: mod.WalletProviders })),
-  {
-    ssr: false,
-    loading: () => <div className="flex items-center justify-center min-h-screen">Loading...</div>
-  }
-);
+// DISABLED: PrivyProvider causing Monad Testnet issues
+// const PrivyProvider = dynamic(
+//   () => import('@privy-io/react-auth').then((mod) => ({ default: mod.PrivyProvider })),
+//   { ssr: false }
+// );
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+
+  // Suppress console warnings for known Privy issues
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const originalError = console.error;
+      console.error = (...args) => {
+        if (
+          typeof args[0] === 'string' &&
+          (args[0].includes('unique "key" prop') ||
+           args[0].includes('cannot be a descendant') ||
+           args[0].includes('validateDOMNesting'))
+        ) {
+          return;
+        }
+        originalError.apply(console, args);
+      };
+
+      // Cleanup function to restore original console.error
+      return () => {
+        console.error = originalError;
+      };
+    }
+  }, []);
+
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <WalletProviders>
-          {children}
-        </WalletProviders>
+        <RainbowKitProvider chains={wagmiConfig.chains}>
+          <FarcasterProvider>
+            {children}
+          </FarcasterProvider>
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

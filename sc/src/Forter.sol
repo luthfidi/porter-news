@@ -9,12 +9,17 @@ import "./ReputationNFT.sol";
 import "./StakingPool.sol";
 import "./Governance.sol";
 
-contract Forter is IForter, Ownable2Step, ReentrancyGuard {
+contract Forter is Ownable2Step, ReentrancyGuard {
     // Contract dependencies
     ReputationNFT public reputationNFT;
     StakingPool public stakingPool;
     ForterGovernance public governance;
     IERC20 public stakingToken;
+
+    // Enums for better type safety
+    enum NewsStatus { Active, Resolved }
+    enum Outcome { None, YES, NO }
+    enum Position { YES, NO }
 
     // News and Pools
     struct News {
@@ -25,8 +30,8 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
         string resolutionCriteria;
         uint256 createdAt;
         uint256 resolveTime;
-        bool isResolved;
-        bool outcome;
+        NewsStatus status;
+        Outcome outcome;
         uint256 totalPools;
         uint256 totalStaked;
         // Resolution metadata
@@ -34,6 +39,7 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
         address resolvedBy;
         string resolutionSource;
         string resolutionNotes;
+        bool emergencyResolve;
         mapping(uint256 => Pool) pools;
     }
 
@@ -43,7 +49,7 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
         string[] evidenceLinks;
         string imageUrl;
         string imageCaption;
-        bool position; // true for YES, false for NO
+        Position position;
         uint256 creatorStake;
         uint256 totalStaked;
         uint256 agreeStakes;
@@ -77,7 +83,7 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
         uint256 indexed poolId,
         address indexed creator,
         string reasoning,
-        bool position,
+        Position position,
         uint256 creatorStake
     );
 
@@ -89,7 +95,9 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
         bool position
     );
 
-    event Resolved(uint256 indexed newsId, bool outcome, address resolvedBy);
+    event Resolved(uint256 indexed newsId, uint8 outcome, address resolvedBy);
+
+    event EmergencyResolved(uint256 indexed newsId, uint8 outcome, address resolvedBy);
 
     constructor(address _stakingToken, address _reputationNFT, address payable _governance)
         Ownable(msg.sender)
@@ -114,7 +122,7 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
     }
 
     modifier onlyBeforeResolve(uint256 newsId) {
-        require(!newsItems[newsId].isResolved, "News already resolved");
+        require(newsItems[newsId].status == NewsStatus.Active, "News already resolved");
         require(block.timestamp < newsItems[newsId].resolveTime, "Resolution time passed");
         _;
     }
@@ -126,7 +134,7 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
         string memory _category,
         string memory _resolutionCriteria,
         uint256 _resolveTime
-    ) external override {
+    ) external {
         require(bytes(_title).length > 0, "Title cannot be empty");
         require(bytes(_description).length > 0, "Description cannot be empty");
 
@@ -148,7 +156,8 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
         news.resolutionCriteria = _resolutionCriteria;
         news.createdAt = block.timestamp;
         news.resolveTime = _resolveTime;
-        news.isResolved = false;
+        news.status = NewsStatus.Active;
+        news.outcome = Outcome.None;
 
         userNewsCount[msg.sender]++;
         userNewsIds[msg.sender].push(newsId);
@@ -162,9 +171,9 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
         string[] memory _evidenceLinks,
         string memory _imageUrl,
         string memory _imageCaption,
-        bool _position,
+        Position _position,
         uint256 _creatorStake
-    ) external override validNews(newsId) onlyBeforeResolve(newsId) nonReentrant {
+    ) external validNews(newsId) onlyBeforeResolve(newsId) nonReentrant {
         require(bytes(_reasoning).length >= 100, "Reasoning too short");
         require(_creatorStake > 0, "Creator stake must be greater than 0");
 
@@ -196,11 +205,19 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
         );
 
         // Auto-stake creator's initial stake (creator agrees with own pool)
-        stakingPool.stake(newsId, poolId, msg.sender, _creatorStake, _position, _position);
+        // Convert Position enum to bool for staking pool compatibility
+        bool positionBool = (_position == Position.YES);
+        stakingPool.stake(newsId, poolId, msg.sender, _creatorStake, positionBool, positionBool);
 
-        // Update pool totals
+        // Update pool totals - FIXED: Creator stake follows pool position
         pool.totalStaked = _creatorStake;
-        pool.agreeStakes = _creatorStake;
+        if (positionBool) {
+            // Pool YES - creator agrees with own position (agreeStakes)
+            pool.agreeStakes = _creatorStake;
+        } else {
+            // Pool NO - creator agrees with own position (disagreeStakes)
+            pool.disagreeStakes = _creatorStake;
+        }
         news.totalStaked += _creatorStake;
 
         emit PoolCreated(newsId, poolId, msg.sender, _reasoning, _position, _creatorStake);
@@ -208,7 +225,6 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
 
     function stake(uint256 newsId, uint256 poolId, uint256 amount, bool userPosition)
         external
-        override
         validNews(newsId)
         onlyBeforeResolve(newsId)
         nonReentrant
@@ -227,73 +243,210 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
         // Transfer tokens to staking pool
         require(stakingToken.transferFrom(msg.sender, address(stakingPool), amount), "Transfer failed");
 
-        // Delegate to staking pool
-        stakingPool.stake(newsId, poolId, msg.sender, amount, pool.position, userPosition);
+        // Convert Position enum to bool for StakingPool compatibility
+        bool poolPositionBool = (pool.position == Position.YES);
 
-        // Update pool totals
+        // FIXED: Send correct userPosition to staking pool
+        stakingPool.stake(newsId, poolId, msg.sender, amount, poolPositionBool, userPosition);
+
+        // Update pool totals - FIXED: Compare userPosition with poolPosition
         pool.totalStaked += amount;
-        if (userPosition == pool.position) {
+        if (userPosition == poolPositionBool) {
+            // User agrees with pool creator's position
             pool.agreeStakes += amount;
         } else {
+            // User disagrees with pool creator's position
             pool.disagreeStakes += amount;
         }
         news.totalStaked += amount;
 
-        emit Staked(newsId, poolId, msg.sender, amount, userPosition);
+        emit Staked(newsId, poolId, msg.sender, amount, poolPositionBool);
     }
 
     function resolveNews(
         uint256 newsId,
-        bool outcome,
+        Outcome outcome,
         string memory resolutionSource,
         string memory resolutionNotes
-    ) external override onlyOwner validNews(newsId) {
+    ) external onlyOwner validNews(newsId) {
         News storage news = newsItems[newsId];
-        require(!news.isResolved, "Already resolved");
+        require(news.status == NewsStatus.Active, "Already resolved");
         require(block.timestamp >= news.resolveTime, "Too early to resolve");
+        require(outcome != Outcome.None, "Invalid outcome");
 
-        news.isResolved = true;
+        news.status = NewsStatus.Resolved;
         news.outcome = outcome;
         news.resolvedAt = block.timestamp;
         news.resolvedBy = msg.sender;
         news.resolutionSource = resolutionSource;
         news.resolutionNotes = resolutionNotes;
 
-        // Resolve all pools and update reputations
-        _resolvePoolsAndUpdateReputations(newsId, outcome);
+        // Resolve all pools, update reputations, and AUTO-DISTRIBUTE rewards
+        _resolvePoolsAndDistributeRewards(newsId, outcome);
 
-        emit Resolved(newsId, outcome, msg.sender);
+        emit Resolved(newsId, uint8(outcome), msg.sender);
     }
 
-    function _resolvePoolsAndUpdateReputations(uint256 newsId, bool outcome) internal {
+    function emergencyResolve(
+        uint256 newsId,
+        Outcome outcome,
+        string memory resolutionSource,
+        string memory resolutionNotes
+    ) external onlyOwner validNews(newsId) {
+        News storage news = newsItems[newsId];
+        require(news.status == NewsStatus.Active, "Already resolved");
+        require(outcome != Outcome.None, "Invalid outcome");
+
+        news.status = NewsStatus.Resolved;
+        news.outcome = outcome;
+        news.resolvedAt = block.timestamp;
+        news.resolvedBy = msg.sender;
+        news.resolutionSource = resolutionSource;
+        news.resolutionNotes = resolutionNotes;
+        news.emergencyResolve = true;
+
+        // Resolve all pools, update reputations, and AUTO-DISTRIBUTE rewards
+        _resolvePoolsAndDistributeRewards(newsId, outcome);
+
+        emit EmergencyResolved(newsId, uint8(outcome), msg.sender);
+        emit Resolved(newsId, uint8(outcome), msg.sender);
+    }
+
+    function _resolvePoolsAndDistributeRewards(uint256 newsId, Outcome outcome) internal {
         News storage news = newsItems[newsId];
 
-        // Iterate through all pools and update reputations
+        // Iterate through all pools
         for (uint256 i = 0; i < news.totalPools; i++) {
             Pool storage pool = news.pools[i];
 
             pool.isResolved = true;
-            pool.isCorrect = (pool.position == outcome);
 
-            // Update creator's reputation
-            reputationNFT.recordPrediction(pool.creator, pool.isCorrect);
+            // Check if pool position matches news outcome
+            bool poolCorrect = (pool.position == Position.YES && outcome == Outcome.YES) ||
+                              (pool.position == Position.NO && outcome == Outcome.NO);
+            pool.isCorrect = poolCorrect;
 
-            if (pool.isCorrect) {
-                // Reward reputation points based on stake amount
-                uint256 reputationPoints = pool.creatorStake / 1e18; // 1 point per token
-                if (reputationPoints > 0) {
-                    reputationNFT.increaseReputation(pool.creator, reputationPoints);
-                }
+            // Record pool result with total stake for reputation system
+            reputationNFT.recordPoolWithStake(
+                pool.creator,
+                poolCorrect,
+                pool.totalStaked
+            );
+
+            // AUTO-DISTRIBUTE REWARDS
+            if (pool.totalStaked > 0) {
+                _distributePoolRewards(newsId, i, poolCorrect);
             }
         }
     }
 
+    function _distributePoolRewards(
+        uint256 newsId,
+        uint256 poolId,
+        bool poolCorrect
+    ) internal {
+        Pool storage pool = newsItems[newsId].pools[poolId];
+
+        uint256 totalPool = pool.totalStaked;
+        uint256 protocolFee = (totalPool * 200) / 10000; // 2%
+        uint256 remaining = totalPool - protocolFee;
+
+        // Transfer protocol fee to governance fee recipient
+        (, , , , address feeRecipient) = getGovernanceParameters();
+        stakingPool.transferReward(feeRecipient, protocolFee);
+
+        if (poolCorrect) {
+            // Pool creator was CORRECT
+
+            // 1. Creator gets 20% of remaining pool
+            uint256 creatorReward = (remaining * 2000) / 10000; // 20%
+            stakingPool.transferReward(pool.creator, creatorReward);
+            emit CreatorRewardDistributed(newsId, poolId, pool.creator, creatorReward);
+
+            // 2. Winning stakers (agree) get 80% of remaining pool
+            uint256 stakersPool = remaining - creatorReward; // 80%
+            _distributeToStakers(newsId, poolId, stakersPool, true); // true = agree winners
+
+        } else {
+            // Pool creator was WRONG
+
+            // 1. Creator gets NOTHING
+
+            // 2. ALL remaining pool (98%) goes to disagree stakers
+            _distributeToStakers(newsId, poolId, remaining, false); // false = disagree winners
+        }
+    }
+
+    function _distributeToStakers(
+        uint256 newsId,
+        uint256 poolId,
+        uint256 rewardPool,
+        bool agreeWins
+    ) internal {
+        Pool storage pool = newsItems[newsId].pools[poolId];
+
+        // Get list of stakers for this pool
+        address[] memory stakers = stakingPool.getPoolStakers(newsId, poolId);
+
+        // Calculate total winning stakes (EXCLUDE creator stake from agree pool)
+        uint256 winningTotal = agreeWins
+            ? pool.agreeStakes - pool.creatorStake  // Agree wins, exclude creator
+            : pool.disagreeStakes;                   // Disagree wins
+
+        if (winningTotal == 0) return; // No winning stakers
+
+        // Distribute to each winning staker
+        for (uint256 i = 0; i < stakers.length; i++) {
+            address staker = stakers[i];
+
+            // Skip creator (creator already got 20% if pool correct)
+            if (staker == pool.creator) continue;
+
+            // Get staker's position and amount
+            (uint256 stakeAmount, bool position, , bool isWithdrawn) =
+                stakingPool.getUserStake(newsId, poolId, staker);
+
+            if (isWithdrawn || stakeAmount == 0) continue;
+
+            // Check if this staker is a winner
+            bool poolPositionBool = (pool.position == Position.YES);
+            bool stakerWon = (position == poolPositionBool && agreeWins) ||
+                            (position != poolPositionBool && !agreeWins);
+
+            if (stakerWon) {
+                // Calculate proportional reward
+                uint256 stakerReward = (rewardPool * stakeAmount) / winningTotal;
+
+                // Mark as claimed and transfer
+                stakingPool.markStakeAsDistributed(newsId, poolId, staker);
+                stakingPool.transferReward(staker, stakerReward);
+
+                emit StakerRewardDistributed(newsId, poolId, staker, stakerReward);
+            }
+        }
+    }
+
+    // New events
+    event CreatorRewardDistributed(
+        uint256 indexed newsId,
+        uint256 indexed poolId,
+        address indexed creator,
+        uint256 amount
+    );
+
+    event StakerRewardDistributed(
+        uint256 indexed newsId,
+        uint256 indexed poolId,
+        address indexed staker,
+        uint256 amount
+    );
+
     // View functions
-    function getNewsCount() external view override returns (uint256) {
+    function getNewsCount() external view returns (uint256) {
         return newsCount;
     }
 
-    function getPoolCount(uint256 newsId) external view override validNews(newsId) returns (uint256) {
+    function getPoolCount(uint256 newsId) external view validNews(newsId) returns (uint256) {
         return newsItems[newsId].totalPools;
     }
 
@@ -309,8 +462,8 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
             string memory resolutionCriteria,
             uint256 createdAt,
             uint256 resolveTime,
-            bool isResolved,
-            bool outcome,
+            NewsStatus status,
+            Outcome outcome,
             uint256 totalPools,
             uint256 totalStaked
         )
@@ -324,7 +477,7 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
             news.resolutionCriteria,
             news.createdAt,
             news.resolveTime,
-            news.isResolved,
+            news.status,
             news.outcome,
             news.totalPools,
             news.totalStaked
@@ -356,7 +509,7 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
             string[] memory evidenceLinks,
             string memory imageUrl,
             string memory imageCaption,
-            bool position,
+            Position position,
             uint256 creatorStake,
             uint256 totalStaked,
             uint256 agreeStakes,
@@ -430,7 +583,7 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
         external
         view
         validNews(newsId)
-        returns (bool isResolved, bool isCorrect, bool position)
+        returns (bool isResolved, bool isCorrect, Position position)
     {
         require(poolId < newsItems[newsId].totalPools, "Invalid pool ID");
         Pool storage pool = newsItems[newsId].pools[poolId];
@@ -462,7 +615,8 @@ contract Forter is IForter, Ownable2Step, ReentrancyGuard {
 
     // Emergency withdraw any ERC20 tokens (onlyOwner)
     function withdrawToken(address token, uint256 amount) external onlyOwner {
-        IERC20(token).transfer(owner(), amount);
+        bool success = IERC20(token).transfer(owner(), amount);
+        require(success, "Transfer failed");
     }
 
     // Emergency withdraw ETH (onlyOwner)

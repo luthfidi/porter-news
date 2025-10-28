@@ -1,57 +1,42 @@
-import { http, createConfig, createStorage, cookieStorage } from 'wagmi'
-import { defineChain } from 'viem'
-import { coinbaseWallet, walletConnect, injected } from 'wagmi/connectors'
+import { createConfig, http, fallback } from 'wagmi';
+import { defineChain } from 'viem';
+import { createPublicClient } from 'viem';
 
-// Define Monad Devnet chain
-const monad = defineChain({
-  id: 41455,
-  name: 'Monad Devnet',
+// Define Monad testnet chain
+const monadTestnet = defineChain({
+  id: 10143,
+  name: 'Monad Testnet',
   nativeCurrency: {
     decimals: 18,
     name: 'MON',
-    symbol: 'MON'
+    symbol: 'MON',
   },
   rpcUrls: {
-    default: {
-      http: [process.env.NEXT_PUBLIC_MONAD_RPC_URL || 'https://rpc.monad.xyz']
-    }
+    default: { http: ['https://testnet-rpc.monad.xyz'] },
+    public: { http: ['https://testnet-rpc.monad.xyz'] },
   },
   blockExplorers: {
-    default: {
-      name: 'Monad Explorer',
-      url: 'https://testnet.monadexplorer.com'
-    }
+    default: { name: 'Monad Explorer', url: 'https://testnet.monadexplorer.com' },
   },
   testnet: true,
-})
+});
 
-// Only create connectors on client-side
-function getConnectors() {
-  if (typeof window === 'undefined') {
-    return []
-  }
-
-  return [
-    injected(),
-    coinbaseWallet({
-      appName: 'Porter News',
-      preference: 'smartWalletOnly',
-    }),
-    walletConnect({
-      projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_ID || 'YOUR_PROJECT_ID',
-    }),
-  ]
-}
+// Multiple RPC endpoints for reliability
+const monadRPCs = [
+  "https://testnet-rpc.monad.xyz",
+  "https://rpc.testnet.monad.xyz",
+];
 
 export const config = createConfig({
-  chains: [monad],
-  connectors: getConnectors(),
-  // Use cookie storage for SSR compatibility
-  storage: createStorage({
-    storage: typeof window !== 'undefined' ? window.localStorage : cookieStorage,
-  }),
-  ssr: true,
+  chains: [monadTestnet],
   transports: {
-    [monad.id]: http(),
+    [monadTestnet.id]: fallback(
+      monadRPCs.map((url) => http(url, {
+        timeout: 10_000, // 10 seconds
+        retryCount: 3,
+        retryDelay: 1000, // 1 second
+      }))
+    ),
   },
-})
+  ssr: false,
+});

@@ -1,40 +1,44 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { getAllAnalysts, sortAnalysts, getAnalystsByCategory } from '@/lib/mock-data';
+import { useMemo } from 'react';
+import { useAnalysts, useFilteredAnalysts } from '@/lib/hooks/useAnalysts';
 import AnalystCard from '@/components/analysts/AnalystCard';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Users,
+  Target,
+  Award,
+  AlertTriangle,
+  Search,
+  Lightbulb,
+  TrendingUp,
+  Layers
+} from 'lucide-react';
 
 export default function AnalystsPage() {
-  const [categoryFilter, setCategoryFilter] = useState<string>('All');
-  const [sortBy, setSortBy] = useState<'accuracy' | 'totalPools' | 'recent'>('accuracy');
+  const categories = ['All', 'Crypto', 'Macro', 'Tech', 'DeFi'];
 
-  // Get and filter analysts
-  const filteredAnalysts = useMemo(() => {
-    let analysts = getAllAnalysts();
+  // Fetch all analysts from contract or mock
+  const { analysts, loading, error } = useAnalysts();
 
-    // Apply category filter
-    if (categoryFilter !== 'All') {
-      analysts = getAnalystsByCategory(categoryFilter);
-    }
+  // Filter and sort analysts
+  const {
+    filteredAnalysts,
+    categoryFilter,
+    setCategoryFilter,
+    sortBy,
+    setSortBy,
+    stats: filterStats
+  } = useFilteredAnalysts(analysts);
 
-    // Apply sorting
-    analysts = sortAnalysts(analysts, sortBy);
-
-    return analysts;
-  }, [categoryFilter, sortBy]);
-
-  // Calculate stats
+  // Calculate global stats
   const stats = useMemo(() => {
-    const allAnalysts = getAllAnalysts();
-    const totalAnalysts = allAnalysts.length;
-    const avgAccuracy = totalAnalysts > 0
-      ? Math.round(allAnalysts.reduce((sum, a) => sum + a.accuracy, 0) / totalAnalysts)
-      : 0;
+    const totalAnalysts = analysts.length;
+    const avgAccuracy = filterStats.avgAccuracy;
 
     // Count by category
     const categoryCount: Record<string, number> = {};
-    allAnalysts.forEach(analyst => {
+    analysts.forEach(analyst => {
       if (analyst.specialty) {
         analyst.specialty.split(',').forEach(cat => {
           const trimmed = cat.trim();
@@ -51,65 +55,99 @@ export default function AnalystsPage() {
       mostActiveCategory: mostActiveCategory ? mostActiveCategory[0] : 'N/A',
       mostActiveCategoryCount: mostActiveCategory ? mostActiveCategory[1] : 0
     };
-  }, []);
+  }, [analysts, filterStats]);
 
-  const categories = ['All', 'Crypto', 'Macro', 'Tech', 'DeFi'];
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 md:pt-24 pb-16">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+              <p className="text-sm text-muted-foreground">Loading analysts...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen pt-20 md:pt-24 pb-16">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <Card className="border border-destructive/50 bg-destructive/5">
+            <CardContent className="p-6 md:p-8 text-center">
+              <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+              <h3 className="text-lg md:text-xl font-semibold mb-2">Failed to load analysts</h3>
+              <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen pt-20 pb-16">
+    <div className="min-h-screen pt-20 md:pt-24 pb-24 md:pb-16">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            <span className="mr-2">🏆</span>
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4 flex items-center gap-2">
+            <Award className="h-7 w-7 md:h-8 md:w-8 text-primary" />
             <span className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
               Top Analysts & Informers
             </span>
           </h1>
-          <p className="text-muted-foreground text-lg max-w-3xl">
+          <p className="text-muted-foreground text-sm md:text-base lg:text-lg max-w-3xl">
             Discover credible analysts by track record. All reputation data is verified on-chain and built from proven pool creation performance.
           </p>
         </div>
 
         {/* Stats Banner */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border border-border bg-card hover:bg-secondary transition-all duration-300 hover:scale-105 hover:shadow-md">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-primary mb-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+          <Card className="border border-border bg-card">
+            <CardContent className="p-4 md:p-6 text-center">
+              <Users className="h-5 w-5 md:h-6 md:w-6 mx-auto mb-2 text-primary" />
+              <div className="text-xl md:text-2xl font-bold text-primary mb-1">
                 {stats.totalAnalysts}
               </div>
-              <div className="text-sm text-muted-foreground">Total Analysts</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Total Analysts</div>
             </CardContent>
           </Card>
-          <Card className="border border-border bg-card hover:bg-secondary transition-all duration-300 hover:scale-105 hover:shadow-md">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-accent mb-1">
+          <Card className="border border-border bg-card">
+            <CardContent className="p-4 md:p-6 text-center">
+              <Target className="h-5 w-5 md:h-6 md:w-6 mx-auto mb-2 text-accent" />
+              <div className="text-xl md:text-2xl font-bold text-accent mb-1">
                 {stats.avgAccuracy}%
               </div>
-              <div className="text-sm text-muted-foreground">Average Accuracy</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Average Accuracy</div>
             </CardContent>
           </Card>
-          <Card className="border border-border bg-card hover:bg-secondary transition-all duration-300 hover:scale-105 hover:shadow-md">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-foreground mb-1">
+          <Card className="border border-border bg-card">
+            <CardContent className="p-4 md:p-6 text-center">
+              <Layers className="h-5 w-5 md:h-6 md:w-6 mx-auto mb-2 text-foreground" />
+              <div className="text-xl md:text-2xl font-bold text-foreground mb-1">
                 {stats.mostActiveCategory}
               </div>
-              <div className="text-sm text-muted-foreground">Most Active Specialty</div>
+              <div className="text-xs md:text-sm text-muted-foreground">Most Active</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Filters & Sort */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8 items-start md:items-center justify-between">
+        <div className="flex flex-col gap-4 mb-6 md:mb-8">
           {/* Category Filter */}
           <div>
-            <div className="text-sm font-medium text-muted-foreground mb-2">Category</div>
-            <div className="flex flex-wrap gap-2">
+            <div className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Category</div>
+            <div className="flex flex-wrap gap-1.5 md:gap-2">
               {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => setCategoryFilter(category)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  className={`px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all ${
                     categoryFilter === category
                       ? 'bg-primary text-primary-foreground shadow-lg'
                       : 'bg-card text-muted-foreground hover:bg-secondary border border-border'
@@ -123,31 +161,38 @@ export default function AnalystsPage() {
 
           {/* Sort Options */}
           <div>
-            <div className="text-sm font-medium text-muted-foreground mb-2">Sort by</div>
-            <div className="flex gap-2">
+            <div className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Sort by</div>
+            <div className="flex flex-wrap gap-1.5 md:gap-2">
               <button
                 onClick={() => setSortBy('accuracy')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
                   sortBy === 'accuracy'
                     ? 'bg-accent text-accent-foreground'
                     : 'bg-card text-muted-foreground hover:bg-secondary border border-border'
                 }`}
               >
-                Accuracy ▼
+                <span className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
+                  <span>Accuracy</span>
+                </span>
               </button>
               <button
                 onClick={() => setSortBy('totalPools')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
                   sortBy === 'totalPools'
                     ? 'bg-accent text-accent-foreground'
                     : 'bg-card text-muted-foreground hover:bg-secondary border border-border'
                 }`}
               >
-                Most Pools
+                <span className="flex items-center gap-1">
+                  <Layers className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="hidden sm:inline">Most </span>
+                  <span>Pools</span>
+                </span>
               </button>
               <button
                 onClick={() => setSortBy('recent')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
                   sortBy === 'recent'
                     ? 'bg-accent text-accent-foreground'
                     : 'bg-card text-muted-foreground hover:bg-secondary border border-border'
@@ -160,8 +205,8 @@ export default function AnalystsPage() {
         </div>
 
         {/* Results Count */}
-        <div className="mb-4">
-          <p className="text-sm text-muted-foreground">
+        <div className="mb-3 md:mb-4">
+          <p className="text-xs md:text-sm text-muted-foreground">
             Showing {filteredAnalysts.length} {filteredAnalysts.length === 1 ? 'analyst' : 'analysts'}
             {categoryFilter !== 'All' && ` in ${categoryFilter}`}
           </p>
@@ -169,17 +214,17 @@ export default function AnalystsPage() {
 
         {/* Analysts Grid */}
         {filteredAnalysts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {filteredAnalysts.map((analyst) => (
               <AnalystCard key={analyst.address} analyst={analyst} />
             ))}
           </div>
         ) : (
           <Card className="border border-border bg-card">
-            <CardContent className="p-12 text-center">
-              <div className="text-4xl mb-4">🔍</div>
-              <h3 className="text-xl font-semibold mb-2">No analysts found</h3>
-              <p className="text-muted-foreground mb-6">
+            <CardContent className="p-8 md:p-12 text-center">
+              <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg md:text-xl font-semibold mb-2">No analysts found</h3>
+              <p className="text-sm md:text-base text-muted-foreground mb-6">
                 Try adjusting your filters to see more results.
               </p>
               <button
@@ -187,7 +232,7 @@ export default function AnalystsPage() {
                   setCategoryFilter('All');
                   setSortBy('accuracy');
                 }}
-                className="text-primary hover:underline"
+                className="text-primary hover:underline text-sm md:text-base"
               >
                 Reset filters
               </button>
@@ -196,13 +241,19 @@ export default function AnalystsPage() {
         )}
 
         {/* Info Section */}
-        <Card className="mt-12 border border-primary/30 bg-primary/5">
-          <CardContent className="p-8">
-            <h3 className="text-xl font-bold mb-4">💡 How Reputation Works</h3>
-            <div className="grid md:grid-cols-2 gap-6 text-sm text-muted-foreground">
+        <Card className="mt-8 md:mt-12 border border-primary/30 bg-primary/5">
+          <CardContent className="p-4 md:p-6 lg:p-8">
+            <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-primary" />
+              <span>How Reputation Works</span>
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4 md:gap-6 text-xs md:text-sm text-muted-foreground">
               <div>
-                <h4 className="font-semibold text-foreground mb-2">📊 Tier System</h4>
-                <ul className="space-y-1">
+                <h4 className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                  <Award className="h-4 w-4" />
+                  <span>Tier System</span>
+                </h4>
+                <ul className="space-y-1 md:space-y-1.5">
                   <li>👑 <strong>Legend</strong>: 95%+ accuracy</li>
                   <li>💎 <strong>Master</strong>: 85-94% accuracy</li>
                   <li>🥇 <strong>Expert</strong>: 70-84% accuracy</li>
@@ -211,7 +262,10 @@ export default function AnalystsPage() {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-foreground mb-2">🎯 Accuracy Calculation</h4>
+                <h4 className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                  <Target className="h-4 w-4" />
+                  <span>Accuracy Calculation</span>
+                </h4>
                 <p className="mb-2">
                   Reputation is calculated <strong>only from pool creation</strong>, not from staking activity.
                 </p>

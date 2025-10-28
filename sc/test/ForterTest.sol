@@ -27,8 +27,8 @@ contract ForterTest is ForterTestSetup {
             string memory resolutionCriteria,
             uint256 createdAt,
             uint256 newsResolveTime,
-            bool isResolved,
-            bool outcome,
+            Forter.NewsStatus status,
+            Forter.Outcome outcome,
             uint256 totalPools,
             uint256 totalStaked
         ) = forter.getNewsInfo(initialCount);
@@ -37,8 +37,8 @@ contract ForterTest is ForterTestSetup {
         assertEq(title, "Test News Title");
         assertEq(category, "Crypto");
         assertEq(newsResolveTime, resolveTime);
-        assertFalse(isResolved);
-        assertFalse(outcome);
+        assertTrue(status == Forter.NewsStatus.Active);
+        assertTrue(outcome == Forter.Outcome.None);
         assertEq(totalPools, 0);
         assertEq(totalStaked, 0);
         assertTrue(createdAt > 0);
@@ -60,7 +60,7 @@ contract ForterTest is ForterTestSetup {
             evidence,
             "https://example.com/image.jpg",
             "Chart showing trend",
-            true,
+            Forter.Position.YES,
             MIN_STAKE
         );
 
@@ -72,7 +72,7 @@ contract ForterTest is ForterTestSetup {
             string[] memory evidenceLinks,
             string memory imageUrl,
             string memory imageCaption,
-            bool position,
+            Forter.Position position,
             uint256 creatorStake,
             uint256 totalStaked,
             uint256 agreeStakes,
@@ -87,7 +87,7 @@ contract ForterTest is ForterTestSetup {
         assertEq(evidenceLinks.length, 2);
         assertEq(imageUrl, "https://example.com/image.jpg");
         assertEq(imageCaption, "Chart showing trend");
-        assertTrue(position);
+        assertTrue(position == Forter.Position.YES);
         assertEq(creatorStake, MIN_STAKE);
         assertEq(totalStaked, MIN_STAKE);
         assertEq(agreeStakes, MIN_STAKE);
@@ -129,12 +129,12 @@ contract ForterTest is ForterTestSetup {
 
         // Resolve the news
         vm.prank(owner);
-        forter.resolveNews(newsId, true, "https://coingecko.com", "BTC reached $100k");
+        forter.resolveNews(newsId, Forter.Outcome.YES, "https://coingecko.com", "BTC reached $100k");
 
         // Check if news is resolved
-        (,,,,,,, bool isResolved, bool outcome,,) = forter.getNewsInfo(newsId);
-        assertTrue(isResolved);
-        assertTrue(outcome);
+        (,,,,,,, Forter.NewsStatus status, Forter.Outcome outcome,,) = forter.getNewsInfo(newsId);
+        assertTrue(status == Forter.NewsStatus.Resolved);
+        assertTrue(outcome == Forter.Outcome.YES);
 
         // Check resolution info
         (uint256 resolvedAt, address resolvedBy, string memory resolutionSource, string memory resolutionNotes) =

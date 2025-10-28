@@ -25,3 +25,4 @@ export { newsService } from './news.service';
 export { poolService } from './pool.service';
 export { stakingService } from './staking.service';
 export { reputationService } from './reputation.service';
+export { tokenService } from './token.service';

@@ -95,13 +95,41 @@
       },
       {
         "name": "_position",
-        "type": "bool",
-        "internalType": "bool"
+        "type": "uint8",
+        "internalType": "enum Forter.Position"
       },
       {
         "name": "_creatorStake",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "emergencyResolve",
+    "inputs": [
+      {
+        "name": "newsId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "outcome",
+        "type": "uint8",
+        "internalType": "enum Forter.Outcome"
+      },
+      {
+        "name": "resolutionSource",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "resolutionNotes",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [],
@@ -219,14 +247,14 @@
         "internalType": "uint256"
       },
       {
-        "name": "isResolved",
-        "type": "bool",
-        "internalType": "bool"
+        "name": "status",
+        "type": "uint8",
+        "internalType": "enum Forter.NewsStatus"
       },
       {
         "name": "outcome",
-        "type": "bool",
-        "internalType": "bool"
+        "type": "uint8",
+        "internalType": "enum Forter.Outcome"
       },
       {
         "name": "totalPools",
@@ -337,8 +365,8 @@
       },
       {
         "name": "position",
-        "type": "bool",
-        "internalType": "bool"
+        "type": "uint8",
+        "internalType": "enum Forter.Position"
       },
       {
         "name": "creatorStake",
@@ -406,8 +434,8 @@
       },
       {
         "name": "position",
-        "type": "bool",
-        "internalType": "bool"
+        "type": "uint8",
+        "internalType": "enum Forter.Position"
       }
     ],
     "stateMutability": "view"
@@ -587,14 +615,14 @@
         "internalType": "uint256"
       },
       {
-        "name": "isResolved",
-        "type": "bool",
-        "internalType": "bool"
+        "name": "status",
+        "type": "uint8",
+        "internalType": "enum Forter.NewsStatus"
       },
       {
         "name": "outcome",
-        "type": "bool",
-        "internalType": "bool"
+        "type": "uint8",
+        "internalType": "enum Forter.Outcome"
       },
       {
         "name": "totalPools",
@@ -625,6 +653,11 @@
         "name": "resolutionNotes",
         "type": "string",
         "internalType": "string"
+      },
+      {
+        "name": "emergencyResolve",
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "stateMutability": "view"
@@ -686,8 +719,8 @@
       },
       {
         "name": "outcome",
-        "type": "bool",
-        "internalType": "bool"
+        "type": "uint8",
+        "internalType": "enum Forter.Outcome"
       },
       {
         "name": "resolutionSource",
@@ -888,6 +921,62 @@
   },
   {
     "type": "event",
+    "name": "CreatorRewardDistributed",
+    "inputs": [
+      {
+        "name": "newsId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "poolId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "creator",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EmergencyResolved",
+    "inputs": [
+      {
+        "name": "newsId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "outcome",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "uint8"
+      },
+      {
+        "name": "resolvedBy",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "NewsCreated",
     "inputs": [
       {
@@ -991,9 +1080,9 @@
       },
       {
         "name": "position",
-        "type": "bool",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "bool"
+        "internalType": "enum Forter.Position"
       },
       {
         "name": "creatorStake",
@@ -1016,9 +1105,9 @@
       },
       {
         "name": "outcome",
-        "type": "bool",
+        "type": "uint8",
         "indexed": false,
-        "internalType": "bool"
+        "internalType": "uint8"
       },
       {
         "name": "resolvedBy",
@@ -1062,6 +1151,37 @@
         "type": "bool",
         "indexed": false,
         "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "StakerRewardDistributed",
+    "inputs": [
+      {
+        "name": "newsId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "poolId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "staker",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false

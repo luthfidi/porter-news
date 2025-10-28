@@ -41,73 +41,6 @@
   },
   {
     "type": "function",
-    "name": "calculateRewards",
-    "inputs": [
-      {
-        "name": "newsId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "poolId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "poolPosition",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "newsOutcome",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "user",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "claimRewards",
-    "inputs": [
-      {
-        "name": "newsId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "poolId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "poolPosition",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "newsOutcome",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "disagreeStakes",
     "inputs": [
       {
@@ -340,7 +273,7 @@
   },
   {
     "type": "function",
-    "name": "hasClaimedReward",
+    "name": "hasStaked",
     "inputs": [
       {
         "name": "",
@@ -369,32 +302,26 @@
   },
   {
     "type": "function",
-    "name": "hasStaked",
+    "name": "markStakeAsDistributed",
     "inputs": [
       {
-        "name": "",
+        "name": "newsId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "",
+        "name": "poolId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "",
+        "name": "user",
         "type": "address",
         "internalType": "address"
       }
     ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -444,6 +371,35 @@
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "rewardDistributed",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -572,6 +528,24 @@
         "name": "newOwner",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "transferReward",
+    "inputs": [
+      {
+        "name": "recipient",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [],

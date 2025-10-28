@@ -352,7 +352,7 @@ export function DetailPageSkeleton() {
 
 export function PageSkeleton() {
   return (
-    <div className="min-h-screen pt-20 pb-16">
+    <div className="min-h-screen pt-28 pb-16">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         {/* Page Header */}
         <div className="mb-8">

@@ -57,17 +57,38 @@ export function getPoolQualityBadge(score: number): {
   label: string;
   color: string;
   icon: string;
+  description: string;
 } {
   if (score >= 80) {
-    return { label: 'Excellent', color: 'text-emerald-600', icon: '🏆' };
+    return {
+      label: 'Excellent',
+      color: 'text-emerald-600',
+      icon: '🏆',
+      description: 'Top-tier analysis with strong evidence and reasoning'
+    };
   }
   if (score >= 60) {
-    return { label: 'Good', color: 'text-blue-600', icon: '⭐' };
+    return {
+      label: 'Good',
+      color: 'text-blue-600',
+      icon: '⭐',
+      description: 'Well-researched analysis with solid evidence'
+    };
   }
   if (score >= 40) {
-    return { label: 'Decent', color: 'text-yellow-600', icon: '✓' };
+    return {
+      label: 'Decent',
+      color: 'text-yellow-600',
+      icon: '✓',
+      description: 'Reasonable analysis with basic evidence'
+    };
   }
-  return { label: 'Basic', color: 'text-gray-500', icon: '○' };
+  return {
+    label: 'Needs Analysis',
+    color: 'text-orange-600',
+      icon: '📊',
+      description: 'Waiting for pools to be created'
+    };
 }
 
 // ============================================
@@ -161,17 +182,23 @@ export function getNewsQualityBadge(score: number): {
   label: string;
   color: string;
   icon: string;
+  description?: string;
 } {
   if (score >= 80) {
-    return { label: 'Excellent', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', icon: '🏆' };
+    return { label: 'Excellent', color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', icon: '🏆', description: 'High engagement with strong analysis' };
   }
   if (score >= 60) {
-    return { label: 'Good', color: 'bg-blue-500/10 text-blue-600 border-blue-500/20', icon: '⭐' };
+    return { label: 'Good', color: 'bg-blue-500/10 text-blue-600 border-blue-500/20', icon: '⭐', description: 'Decent engagement with solid analysis' };
   }
   if (score >= 40) {
-    return { label: 'Decent', color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20', icon: '✓' };
+    return { label: 'Decent', color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20', icon: '✓', description: 'Some engagement with basic analysis' };
   }
-  return { label: 'Low Quality', color: 'bg-gray-500/10 text-gray-500 border-gray-500/20', icon: '○' };
+  return {
+    label: 'Needs Analysis',
+    color: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+    icon: '📊',
+    description: 'Waiting for pools and analysis to be created'
+  };
 }
 
 // ============================================
