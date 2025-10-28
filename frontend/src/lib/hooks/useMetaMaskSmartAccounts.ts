@@ -11,17 +11,19 @@ import {
   getUserDelegations,
   hasAIPermission,
   getAIPerformance,
-  signDelegationMessage,
-  executeDelegatedTransaction,
   AI_AGENTS,
-  AIAgentConfig,
   AIPerformance
 } from '../metamask-smart-accounts';
 
 export interface UseMetaMaskSmartAccountsReturn {
   // State
   isDelegationEnabled: boolean;
-  activeDelegations: any[];
+  activeDelegations: Array<{
+    delegate: string;
+    authority: string;
+    permissions: Record<string, unknown>;
+    expiresAt?: number;
+  }>;
   aiPerformances: Record<string, AIPerformance>;
   isLoading: boolean;
   error: string | null;
@@ -40,7 +42,12 @@ export function useMetaMaskSmartAccounts(): UseMetaMaskSmartAccountsReturn {
   const chainId = useChainId();
 
   const [isDelegationEnabled, setIsDelegationEnabled] = useState(false);
-  const [activeDelegations, setActiveDelegations] = useState<any[]>([]);
+  const [activeDelegations, setActiveDelegations] = useState<Array<{
+    delegate: string;
+    authority: string;
+    permissions: Record<string, unknown>;
+    expiresAt?: number;
+  }>>([]);
   const [aiPerformances, setAiPerformances] = useState<Record<string, AIPerformance>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,20 +57,6 @@ export function useMetaMaskSmartAccounts(): UseMetaMaskSmartAccountsReturn {
     const delegationEnabled = process.env.NEXT_PUBLIC_DELEGATION_ENABLED === 'true';
     setIsDelegationEnabled(delegationEnabled);
   }, []);
-
-  // Refresh delegations when account changes
-  useEffect(() => {
-    if (address && isDelegationEnabled) {
-      refreshDelegations();
-    }
-  }, [address, isDelegationEnabled, refreshDelegations]);
-
-  // Load AI performances on mount
-  useEffect(() => {
-    if (isDelegationEnabled) {
-      refreshPerformances();
-    }
-  }, [isDelegationEnabled, refreshPerformances]);
 
   const refreshDelegations = useCallback(async () => {
     if (!address || !isDelegationEnabled) return;
@@ -80,7 +73,7 @@ export function useMetaMaskSmartAccounts(): UseMetaMaskSmartAccountsReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [address, isDelegationEnabled, refreshDelegations]);
+  }, [address, isDelegationEnabled]);
 
   const refreshPerformances = useCallback(async () => {
     if (!isDelegationEnabled) return;
@@ -117,6 +110,19 @@ export function useMetaMaskSmartAccounts(): UseMetaMaskSmartAccountsReturn {
       setIsLoading(false);
     }
   }, [isDelegationEnabled]);
+
+  // Add useEffect hooks after useCallback definitions
+  useEffect(() => {
+    if (address && isDelegationEnabled) {
+      refreshDelegations();
+    }
+  }, [address, isDelegationEnabled, refreshDelegations]);
+
+  useEffect(() => {
+    if (isDelegationEnabled) {
+      refreshPerformances();
+    }
+  }, [isDelegationEnabled, refreshPerformances]);
 
   const enableDelegation = useCallback(async (agentId: string) => {
     if (!address || !isDelegationEnabled) {

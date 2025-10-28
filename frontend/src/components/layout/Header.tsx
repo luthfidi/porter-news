@@ -4,7 +4,6 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from 'next/navigation'
 import CustomConnectButton from '@/components/wallet/CustomConnectButton'
-import { useFarcaster } from '@/contexts/FarcasterProvider'
 
 export default function Header() {
   const pathname = usePathname()
